@@ -88,12 +88,12 @@ try:
         time.sleep_ms(10)
 
 except KeyboardInterrupt:
-    print("\n✓ Stopped by user. Cleaning up...")
+    print("\n[Done] Stopped by user. Cleaning up...")
     mqtt_manager.disconnect()
     indicators.beep_off()
-    print("✓ Done. Goodbye!")
+    print("[Done] Done. Goodbye!")
 
 except Exception as e:
-    print(f"\n✗ Fatal error: {e}")
+    print(f"\n[Error] Fatal error: {e}")
     import traceback
     traceback.print_exc()
