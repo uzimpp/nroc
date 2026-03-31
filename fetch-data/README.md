@@ -6,7 +6,7 @@ This project contains scripts to fetch historical and daily price data for sweet
 
 - `data/`: Directory where fetched CSV files are stored.
 - `constants.py`: Contains product IDs and API configuration.
-- `scraper.py`: Shared scraping logic using Playwright.
+- `scraper.py`: Shared scraping logic via direct HTTP requests to the TalaadThai API.
 - `fetch_historical.py`: Script to fetch all historical data from **2024-01-01**.
 - `fetch_daily.py`: Script for daily incremental updates (fetches last 7 days to fill gaps).
 
@@ -21,10 +21,9 @@ This project contains scripts to fetch historical and daily price data for sweet
 ## Setup
 
 1. **Install Dependencies**:
-   Ensure you have Python 3 and Playwright installed.
+   Ensure you have Python 3 installed and the required packages.
    ```bash
-   pip install playwright
-   playwright install chromium
+   pip install -r requirements.txt
    ```
 
 2. **Fetch Historical Data**:
@@ -41,5 +40,5 @@ This project contains scripts to fetch historical and daily price data for sweet
 
 ## Requirements
 - Python 3.10+
-- Playwright (Chromium)
+- `requests` library
 - Internet connection (access to talaadthai.com)
