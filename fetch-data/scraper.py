@@ -69,20 +69,22 @@ def fetch_prices(product_id: int, start: datetime, end: datetime) -> list:
     return captured
 
 def save_to_csv(filepath: str, records: list, product_id: int, product_name: str, append: bool = False):
-    """Save records to CSV with deduplication."""
-    seen = {}
+    """Save records to CSV. If append is True, only append new records without rewriting the whole file."""
+    seen_dates = set()
 
-    # Load existing data if appending
+    # Load existing dates if appending
     if append and os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    seen[row["date"]] = (float(row["price_min"]), float(row["price_max"]))
+                    seen_dates.add(row["date"])
         except Exception as e:
             print(f"  [Warning] Could not read existing file for deduplication: {e}")
 
-    # Process new records — API returns date strings like "dd/mm/yyyy"
+    # Process new records
+    new_rows = {}
+    now_iso = datetime.now().isoformat()
     for r in records:
         date_raw = r.get("date")
         if isinstance(date_raw, (int, float)):
@@ -96,17 +98,27 @@ def save_to_csv(filepath: str, records: list, product_id: int, product_name: str
         low = r.get("low")
         high = r.get("high")
         if low is not None and high is not None and date_str:
-            seen[date_str] = (low, high)
+            # Only process if not seen in existing dataset
+            # (or if we are completely rewriting file)
+            if not append or date_str not in seen_dates:
+                # Use dict to deduplicate from the API payload itself
+                new_rows[date_str] = (low, high, now_iso)
 
     # Ensure output directory exists
     os.makedirs(os.path.dirname(os.path.abspath(filepath)), exist_ok=True)
 
-    # Write to CSV sorted by date
-    with open(filepath, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["product_id", "product_name", "date", "price_min", "price_max", "unit", "fetched_at"])
-        for date_str in sorted(seen.keys()):
-            low, high = seen[date_str]
-            writer.writerow([product_id, product_name, date_str, low, high, "กก.", datetime.now().isoformat()])
+    # Determine file mode
+    file_exists = os.path.exists(filepath)
+    mode = "a" if append and file_exists else "w"
 
-    print(f"  [Success] Saved {len(seen)} records to {filepath}")
+    # Write to CSV
+    with open(filepath, mode, newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if mode == "w":
+            writer.writerow(["product_id", "product_name", "date", "price_min", "price_max", "unit", "fetched_at"])
+            
+        for date_str in sorted(new_rows.keys()):
+            low, high, fetched_dt = new_rows[date_str]
+            writer.writerow([product_id, product_name, date_str, low, high, "กก.", fetched_dt])
+
+    print(f"  [Success] Saved {len(new_rows)} new records to {filepath}")

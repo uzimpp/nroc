@@ -19,7 +19,7 @@ def connect(retries: int = 20) -> bool:
     _wlan.active(True)
 
     if _wlan.isconnected():
-        print(f"✓ WiFi already connected: {_wlan.ifconfig()[0]}")
+        print(f"WiFi already connected: {_wlan.ifconfig()[0]}")
         return True
 
     print(f"Connecting to WiFi: {WIFI_SSID}...")
@@ -27,12 +27,12 @@ def connect(retries: int = 20) -> bool:
 
     for attempt in range(1, retries + 1):
         if _wlan.isconnected():
-            print(f"✓ WiFi Connected! IP: {_wlan.ifconfig()[0]}")
+            print(f"WiFi Connected! IP: {_wlan.ifconfig()[0]}")
             return True
-        print(f"  Attempt {attempt}/{retries}...")
+        print(f"Attempt {attempt}/{retries}...")
         time.sleep(1)
 
-    print("✗ WiFi connection failed! Continuing without WiFi.")
+    print("WiFi connection failed! Continuing without WiFi.")
     return False
 
 

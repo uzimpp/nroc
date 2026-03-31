@@ -20,9 +20,9 @@ i2c = I2C(1, sda=Pin(PIN_SDA), scl=Pin(PIN_SCL))
 try:
     i2c.writeto(LM73_ADDR, bytearray([4, 0x60]))
     i2c.writeto(LM73_ADDR, bytearray([0]))
-    print("✓ I2C Temp Sensor initialized")
+    print("I2C Temp Sensor initialized")
 except Exception as e:
-    print("✗ I2C Init Error:", e)
+    print("I2C Init Error:", e)
 
 # ── LDR (Light) ─────────────────────────────────────────────────────────────
 _ldr = ADC(Pin(PIN_LDR))

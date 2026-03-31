@@ -22,17 +22,17 @@ def _on_message(topic, payload):
     try:
         msg   = payload.decode("utf-8").strip()
         topic = topic.decode("utf-8")
-        print(f"<- Received on {topic}: {msg}")
+        print(f"Received on {topic}: {msg}")
 
         if topic == MQTT_TOPIC_SUBSCRIBE:
             if msg == "1":
-                print("  🔊 Buzzer ON (from broker)")
+                print("Buzzer ON (from broker)")
                 indicators.beep_on()
             elif msg == "0":
-                print("  🔇 Buzzer OFF (from broker)")
+                print("Buzzer OFF (from broker)")
                 indicators.beep_off()
             else:
-                print(f"  ⚠️  Invalid command: {msg} (use 0 or 1)")
+                print(f"Invalid command: {msg} (use 0 or 1)")
 
     except Exception as e:
         print(f"MQTT callback error: {e}")
@@ -55,11 +55,11 @@ def connect() -> bool:
         _mqtt.set_callback(_on_message)
         _mqtt.connect()
         _mqtt.subscribe(MQTT_TOPIC_SUBSCRIBE)
-        print(f"✓ MQTT Connected and subscribed to {MQTT_TOPIC_SUBSCRIBE}")
-        print(f"  Send '1' to turn ON buzzer, '0' to turn OFF")
+        print(f"MQTT Connected and subscribed to {MQTT_TOPIC_SUBSCRIBE}")
+        print(f"Send '1' to turn ON buzzer, '0' to turn OFF")
         return True
     except Exception as e:
-        print(f"✗ MQTT Connection Error: {e}")
+        print(f"MQTT Connection Error: {e}")
         _mqtt = None
         return False
 
@@ -71,16 +71,16 @@ def publish(payload: dict) -> bool:
     """
     global _mqtt
     if _mqtt is None:
-        print("✗ MQTT not connected, skipping publish")
+        print("MQTT not connected, skipping publish")
         return False
     try:
         msg = ujson.dumps(payload)
         _mqtt.publish(MQTT_TOPIC_PUBLISH, msg.encode("utf-8"))
-        print(f"✓ Published to {MQTT_TOPIC_PUBLISH}")
-        print(f"  Payload: {msg}")
+        print(f"Published to {MQTT_TOPIC_PUBLISH}")
+        print(f"Payload: {msg}")
         return True
     except Exception as e:
-        print(f"✗ MQTT Publish Error: {e}")
+        print(f"MQTT Publish Error: {e}")
         _reconnect()
         return False
 
@@ -101,7 +101,7 @@ def disconnect():
     if _mqtt:
         try:
             _mqtt.disconnect()
-            print("✓ MQTT disconnected")
+            print("MQTT disconnected")
         except Exception:
             pass
         _mqtt = None
