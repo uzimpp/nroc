@@ -11,11 +11,12 @@ Module layout:
 """
 
 import time
-import wifi_manager
-import mqtt_manager
+
 import indicators
+import mqtt_manager
 import sensors
 import utils
+import wifi_manager
 from config import DEVICE_LAT, DEVICE_LON, PUBLISH_INTERVAL
 
 # ── Boot ─────────────────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ print("Ready! Publishing every 10 minutes. Listening for commands...")
 print("=" * 60 + "\n")
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
-last_publish    = 0
+last_publish = 0
 heartbeat_timer = 0
 
 try:
@@ -64,17 +65,19 @@ try:
             print(f"  Temperature (DHT):  {data['temperature']}°C")
             print(f"  Humidity:           {data['humidity']}%")
             print(f"  Light:              {data['light']} lux")
-            print(f"  Moisture:           {data['moisture']}% (raw: {data['moisture_raw']})")
+            print(
+                f"  Moisture:           {data['moisture']}% (raw: {data['moisture_raw']})"
+            )
 
             payload = {
-                "datetime"    : dt,
-                "lat"         : DEVICE_LAT,
-                "lon"         : DEVICE_LON,
-                "temp_i2c"    : data["temp_i2c"],
-                "light"       : data["light"],
-                "temperature" : data["temperature"],
-                "humidity"    : data["humidity"],
-                "moisture"    : data["moisture"],
+                "datetime": dt,
+                "lat": DEVICE_LAT,
+                "lon": DEVICE_LON,
+                "temp_i2c": data["temp_i2c"],
+                "light": data["light"],
+                "temperature": data["temperature"],
+                "humidity": data["humidity"],
+                "moisture": data["moisture"],
                 "moisture_raw": data["moisture_raw"],
             }
 
@@ -96,4 +99,6 @@ except KeyboardInterrupt:
 except Exception as e:
     print(f"\n[Error] Fatal error: {e}")
     import traceback
+
     traceback.print_exc()
+
