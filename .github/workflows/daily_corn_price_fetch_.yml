@@ -38,16 +38,16 @@ jobs:
           EOF
           echo "API_KEY=${{ secrets.WEATHER_API_KEY }}" > fetch_weather/.env
 
-      - name: Fetch corn price data → CSV
+      - name: Fetch corn price data -> CSV
         run: python fetch-data/fetch_daily.py
 
-      - name: Fetch weather data → JSON
+      - name: Fetch weather data -> JSON
         run: |
           cd fetch_weather
           python test_fetch_weather.py
           cd ..
 
-      - name: Load local files → MySQL
+      - name: Load local files -> MySQL
         run: python load_from_files.py
 
       - name: Commit file backups

@@ -44,3 +44,21 @@ The system then simply compares immediate vs. future profit:
 
 ### Testing (Course 01219343)
 To ensure reliability, the backend API and profit logic are strictly validated using `pytest`. This includes unit testing the mathematical equations, ensuring graceful handling of missing sensor data, and verifying correct OpenAPI HTTP status codes.
+
+---
+
+### Running the Backend API
+The FastAPI backend reads data directly from the IoT telemetry database and presents an interactive Swagger documentation UI.
+
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Start the FastAPI server:**
+   ```bash
+   python3 -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+3. **View Documentation:**
+   Open your browser and navigate to [http://localhost:8000/docs](http://localhost:8000/docs) to test the API endpoints interactively.
