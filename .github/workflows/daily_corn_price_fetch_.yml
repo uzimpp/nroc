@@ -1,0 +1,57 @@
+name: Daily Data Sync
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-and-sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env from secrets
+        run: |
+          cat > .env <<EOF
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}
+          WEATHER_LAT=${{ vars.WEATHER_LAT || '13.75' }}
+          WEATHER_LON=${{ vars.WEATHER_LON || '100.50' }}
+          EOF
+          echo "API_KEY=${{ secrets.WEATHER_API_KEY }}" > fetch_weather/.env
+
+      - name: Fetch corn price data → CSV
+        run: python fetch-data/fetch_daily.py
+
+      - name: Fetch weather data → JSON
+        run: |
+          cd fetch_weather
+          python test_fetch_weather.py
+          cd ..
+
+      - name: Load local files → MySQL
+        run: python load_from_files.py
+
+      - name: Commit file backups
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: daily data update"
+          file_pattern: "fetch-data/data/*.csv fetch_weather/*.json"

@@ -115,8 +115,8 @@ def get_daily_forecast(
     Raises:
         ValueError: If the requested days exceed the 7-day limit.
     """
-    if days > 7:
-        raise ValueError("Daily forecast limit is 7 days.")
+    if days > 5:
+        raise ValueError("Daily forecast limit is 5 days (max duration=126 h).")
 
     url = f"{BASE_URL}/daily/at"
 
@@ -124,7 +124,7 @@ def get_daily_forecast(
         "lat": lat,
         "lon": lon,
         "fields": fields,
-        "duration": days * 24,
+        "duration": days * 24,  # max 126
         "date": datetime.now().strftime("%Y-%m-%d"),
         "hour": 7,
     }

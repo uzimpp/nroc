@@ -2,9 +2,9 @@
 # From TalaadThai.com
 
 CORN_PRODUCTS = {
-    206: "ข้าวโพดหวาน – เบอร์กลาง",
-    216: "ข้าวโพดหวาน – เบอร์เล็ก",
-    182: "ข้าวโพดหวาน – เบอร์ใหญ่",
+    206: "Sweet Corn - Medium",
+    216: "Sweet Corn - Small",
+    182: "Sweet Corn - Large",
 }
 
 API_URL = "https://svc-center-ext-tlt-corp-prod-service.talaadthai.com/v1/ext/product/ProductPricingGraphSummary"
