@@ -22,12 +22,12 @@ NROC helps corn farmers make data-driven decisions: **"Harvest today or hold for
 ## 🛰️ System Data Flow
 ```mermaid
 graph TD
-    A[KidBright ESP32] -->|MQTT/JSON| B[Central API]
+    A[KidBright ESP32] -->|MQTT/JSON| B[ Central API ]
     C[Talaad Thai API] -->|Python Scraper| B
     D[TMD Weather API] -->|Weather Fetcher| B
     B -->|Store| E[(MySQL Database)]
-    E -->|Analyze| F[ML Prediction Models]
-    F -->|Recommendation| G[Next.js Dashboard]
+    E -->|Analyze| F[ ML Prediction Models ]
+    F -->|Recommendation| G[ Next.js Dashboard ]
     B -->|Serve| G
 ```
 
