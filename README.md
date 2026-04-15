@@ -1,64 +1,99 @@
 # NROC 🌽
-An IoT and Machine Learning decision-support system for corn farming. 
+> **Smart Corn Farming: An IoT & Machine Learning Decision Support System**
+
+NROC helps corn farmers make data-driven decisions: **"Harvest today or hold for tomorrow?"** by comparing real-time field data (IoT) with market price forecasts (Machine Learning).
 
 <p align="center">
-  <img src="assets/kidbright.png" alt="KidBright Board & Sensors" width="200"/>
+  <img src="assets/kidbright.png" alt="KidBright Board & Sensors" width="400"/>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/MicroPython-2B5B84?style=for-the-badge&logo=python&logoColor=white" alt="MicroPython">
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=FastAPI&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
-  <img src="https://img.shields.io/badge/IoT-FF5722?style=for-the-badge&logo=internetofthings&logoColor=white" alt="IoT">
-  <img src="https://img.shields.io/badge/Machine%20Learning-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" alt="Machine Learning">
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white" alt="Bun">
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
 </p>
 
-### The Problem
-Corn can be harvested at multiple stages (e.g., Baby Corn, Sweet Corn, Feed Maize). A farmer's daily dilemma is deciding whether to **cash out today** at the current market price or **pay maintenance costs to hold** the crop until the next growth stage. 
+---
 
-### What it does
-NROC solves this by comparing the exact profit margins of both scenarios and outputting a straightforward **"Hold vs. Harvest"** recommendation.
+## 🛰️ System Data Flow
+```mermaid
+graph TD
+    A[KidBright ESP32] -->|MQTT/JSON| B[Central API]
+    C[Talaad Thai API] -->|Python Scraper| B
+    D[TMD Weather API] -->|Weather Fetcher| B
+    B -->|Store| E[(MySQL Database)]
+    E -->|Analyze| F[ML Prediction Models]
+    F -->|Recommendation| G[Next.js Dashboard]
+    B -->|Serve| G
+```
 
 ---
 
-### Architecture & Data
-- **Hardware (IoT)**: An ESP32 deployed in the field gathering Soil Moisture (ZX-SOIL) and Temp/Humidity (DHT11/KY-015) every 30 minutes. (`/embedded`)
-- **Market Data**: A Python scraper pulling daily wholesale corn prices from the Talaad Thai API. (`/fetch-data`)
-- **Backend (FastAPI)**: Integrates the live IoT telemetry, web-scraped market prices, and OpenWeatherMap forecasts into a central API.
-- **Frontend**: A React/Next.js (or Node-RED) dashboard displaying live sensor gauges, growth curves, price fluctuation charts, and the final recommendation.
+## ✨ Key Features
+- **[Live Monitoring]** Real-time telemetry for soil moisture, light, and temperature.
+- **[Market Analytics]** Automated daily price tracking for different corn grades.
+- **[Weather Intelligence]** High-resolution forecasts integrated directly into farming logic.
+- **[Smart ROI]** Automated "Harvest vs. Hold" recommendation based on profit margins.
 
 ---
 
-### How the Decision is Made
-NROC relies on two predictive models (trained on Kaggle and OAE datasets) to calculate future profitability:
+## 🔌 Hardware Gallery (IoT)
+The system uses the **KidBright** ecosystem to bridge the gap between the field and the cloud.
 
-1. **Growth Prediction (Linear Regression):** Estimates when the corn reaches the next harvest phase based on temperature, humidity, and soil moisture.
-2. **Price Prediction (XGBoost):** Predicts future market prices based on historical trends.
-
-The system then simply compares immediate vs. future profit:
-* **Harvest Now:** `(Yield × Current Price) - Sunk Costs`
-* **Hold Crop:** `(Yield × Predicted Price) - (Sunk Costs + Future Maintenance Costs)`
-
----
-
-### Testing (Course 01219343)
-To ensure reliability, the backend API and profit logic are strictly validated using `pytest`. This includes unit testing the mathematical equations, ensuring graceful handling of missing sensor data, and verifying correct OpenAPI HTTP status codes.
+| Sensor | Purpose | Icon |
+| :--- | :--- | :---: |
+| **LM73 High-Precision** | Medical-grade soil/surface temperature monitoring. | 🌡️ |
+| **DHT11 Climate** | Real-time ambient air temperature and humidity. | ☁️ |
+| **Capacitive Soil** | Corrosion-resistant moisture sensing for growth tracking. | 💧 |
+| **LDR Photoresistor** | Solar intensity measurement for photosynthesis analysis. | ☀️ |
 
 ---
 
-### Running the Backend API
-The FastAPI backend reads data directly from the IoT telemetry database and presents an interactive Swagger documentation UI.
+## 🐳 Docker Deployment
+Deploy the full stack (API + Dashboard) instantly using Docker Compose.
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 1. Setup Environment
+```bash
+cp .env.template .env
+```
 
-2. **Start the FastAPI server:**
-   ```bash
-   python3 -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
-   ```
+### 2. Run the System
+```bash
+docker compose up -d --build
+```
 
-3. **View Documentation:**
-   Open your browser and navigate to [http://localhost:8000/docs](http://localhost:8000/docs) to test the API endpoints interactively.
+### 3. Verify Access
+*   **Farmer Dashboard:** `http://localhost:3000`
+*   **Interactive API Docs:** `http://localhost:8000/docs`
+
+---
+
+## 🧠 Decision Support Logic
+NROC uses two predictive models to calculate future profitability:
+
+-   **Growth Prediction (Linear Regression)**: Estimates harvest dates based on Cumulative Growing Degree Days (GDD).
+-   **Price Prediction (XGBoost)**: Forecasts market prices for the next 7-14 days.
+
+> [!TIP]
+> **The Golden Rule**: The system only recommends "Holding" the crop if the predicted future profit (minus maintenance costs) exceeds today's immediate payout by at least 15%.
+
+---
+
+## 🛠️ Local Development
+
+### Backend (Python)
+```bash
+pip install -r requirements.txt
+python3 -m uvicorn api.main:app --reload
+```
+
+### Frontend (Bun/Node)
+```bash
+cd dashboard
+bun install
+bun run dev
+```
