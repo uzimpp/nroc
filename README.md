@@ -44,12 +44,12 @@ graph TD
 ## 🔌 Hardware Gallery (IoT)
 The system uses the **KidBright** ecosystem to bridge the gap between the field and the cloud.
 
-| Sensor | Purpose | Icon |
-| :--- | :--- | :---: |
-| **LM73 High-Precision** | Medical-grade soil/surface temperature monitoring. | 🌡️ |
-| **DHT11 Climate** | Real-time ambient air temperature and humidity. | ☁️ |
-| **Capacitive Soil** | Corrosion-resistant moisture sensing for growth tracking. | 💧 |
-| **LDR Photoresistor** | Solar intensity measurement for photosynthesis analysis. | ☀️ |
+| Sensor | Purpose |
+| :--- | :--- | 
+| **LM73 High-Precision** | Medical-grade soil/surface temperature monitoring. |
+| **DHT11 Climate** | Real-time ambient air temperature and humidity. | 
+| **Capacitive Soil** | Corrosion-resistant moisture sensing for growth tracking. | 
+| **LDR Photoresistor** | Solar intensity measurement for photosynthesis analysis. | 
 
 ---
 
@@ -81,19 +81,3 @@ NROC uses two predictive models to calculate future profitability:
 > [!TIP]
 > **The Golden Rule**: The system only recommends "Holding" the crop if the predicted future profit (minus maintenance costs) exceeds today's immediate payout by at least 15%.
 
----
-
-## 🛠️ Local Development
-
-### Backend (Python)
-```bash
-pip install -r requirements.txt
-python3 -m uvicorn api.main:app --reload
-```
-
-### Frontend (Bun/Node)
-```bash
-cd dashboard
-bun install
-bun run dev
-```
