@@ -1,26 +1,182 @@
 @import "tailwindcss";
 
+/* ── Design Tokens ───────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg-base:     #F3F0E9;
+  --bg-surface:  #FFFFFF;
+  --bg-elevated: #EAE7DF;
+  --bg-inset:    #EDEAD3;
+
+  /* Brand — deep forest green */
+  --brand:       #1A3828;
+  --brand-mid:   #2A5C40;
+  --brand-light: #EBF5EE;
+  --brand-muted: #4A7A5C;
+
+  /* Amber — harvest gold */
+  --amber:       #B8832A;
+  --amber-light: #FAF1E0;
+  --amber-mid:   #D4993A;
+
+  /* Text */
+  --text-primary:   #1A1714;
+  --text-secondary: #6A6560;
+  --text-muted:     #A49E98;
+  --text-on-dark:   #F0EDE6;
+
+  /* Borders */
+  --border:        #DAD5CE;
+  --border-strong: #C2BCB4;
+
+  /* Shadows — warm toned, never cold */
+  --shadow-xs: 0 1px 3px rgba(26,23,20,0.05);
+  --shadow-sm: 0 2px 10px rgba(26,23,20,0.07);
+  --shadow-md: 0 6px 24px rgba(26,23,20,0.10);
+  --shadow-lg: 0 16px 56px rgba(26,23,20,0.14);
+  --shadow-green: 0 8px 32px rgba(26,56,40,0.18);
+
+  /* Geometry */
+  --radius-sm:   10px;
+  --radius-md:   16px;
+  --radius-lg:   22px;
+  --radius-xl:   28px;
 }
 
+/* ── Theme registration for Tailwind ─────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Fonts registered so font-display, font-sans, font-mono work as classes */
+  --font-display: var(--font-cormorant), Georgia, 'Times New Roman', serif;
+  --font-sans:    var(--font-dm-sans), system-ui, sans-serif;
+  --font-mono:    var(--font-dm-mono), 'Courier New', monospace;
+
+  /* Custom colours available as bg-brand, text-amber, etc. */
+  --color-brand:       #1A3828;
+  --color-brand-mid:   #2A5C40;
+  --color-brand-light: #EBF5EE;
+  --color-amber:       #B8832A;
+  --color-amber-light: #FAF1E0;
+  --color-base:        #F3F0E9;
+  --color-surface:     #FFFFFF;
+  --color-on-dark:     #F0EDE6;
+  --color-muted:       #A49E98;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-base);
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Subtle grain texture overlay — feels like fine paper */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* ── Typography helpers ──────────────────────────────────────────────────── */
+.display {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.display-italic {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-weight: 400;
+  font-style: italic;
+}
+.label-caps {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.data-num {
+  font-family: var(--font-dm-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Card primitives ─────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.card-interactive {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  cursor: pointer;
+}
+.card-interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-green);
+  border-color: color-mix(in srgb, var(--brand) 30%, var(--border));
+}
+
+/* ── Focus ring ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand-mid);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Skeleton shimmer ────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    color-mix(in srgb, var(--bg-elevated) 60%, white) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Fade-up animation (used by GSAP as initial state helper) ─────────────── */
+.will-animate {
+  opacity: 0;
+  transform: translateY(24px);
 }

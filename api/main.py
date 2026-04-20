@@ -1,8 +1,9 @@
 from datetime import date, datetime
 from typing import Optional
 
-from fastapi import FastAPI, Query, Depends
+from fastapi import FastAPI, Query, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import pymysql
 
 from api.database import get_db_connection
@@ -127,6 +128,40 @@ def get_sensors_data(
     with db.cursor() as cur:
         cur.execute(sql, params)
         return cur.fetchall()
+
+class GrowthLogCreate(BaseModel):
+    farm_id: str
+    growth_progress_in_gdd: str
+    height: Optional[float] = None
+    n_ears: Optional[int] = None
+    notes: Optional[str] = None
+    observation_date: Optional[datetime] = None
+
+
+@app.post("/api/growth", tags=["Farm IoT"], status_code=201)
+def create_growth_log(
+    body: GrowthLogCreate,
+    db: pymysql.connections.Connection = Depends(get_db)
+):
+    ts = body.observation_date or datetime.now()
+    sql = """
+        INSERT INTO growth (farm_id, growth_progress_in_gdd, height, n_ears, notes, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    with db.cursor() as cur:
+        cur.execute(sql, (body.farm_id, body.growth_progress_in_gdd, body.height, body.n_ears, body.notes, ts))
+    db.commit()
+    return {"status": "created", "observation_date": ts.isoformat()}
+
+
+@app.get("/api/farms", tags=["Farm IoT"])
+def get_farms(db: pymysql.connections.Connection = Depends(get_db)):
+    """Return distinct farm_ids present in the sensors table."""
+    with db.cursor() as cur:
+        cur.execute("SELECT DISTINCT farm_id FROM sensors ORDER BY farm_id")
+        rows = cur.fetchall()
+    return [r["farm_id"] for r in rows]
+
 
 @app.get("/api/growth", tags=["Farm IoT"])
 def get_growth_data(
