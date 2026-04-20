@@ -103,6 +103,24 @@ def get_weather_daily(
         cur.execute(sql, params)
         return cur.fetchall()
 
+@app.get("/api/sensors/latest", tags=["Farm IoT"])
+def get_latest_sensor(
+    farm_id: Optional[str] = Query(None, description="Filter by farm_id"),
+    db: pymysql.connections.Connection = Depends(get_db)
+):
+    """Return the single most-recent sensor reading, optionally filtered by farm."""
+    sql = "SELECT id, farm_id, lat, lon, moisture_raw, moisture, light, temperature, humidity, temp_i2c, created_at FROM sensors WHERE 1=1"
+    params = []
+    if farm_id:
+        sql += " AND farm_id = %s"
+        params.append(farm_id)
+    sql += " ORDER BY created_at DESC LIMIT 1"
+    with db.cursor() as cur:
+        cur.execute(sql, params)
+        row = cur.fetchone()
+    return [row] if row else []
+
+
 @app.get("/api/sensors", tags=["Farm IoT"])
 def get_sensors_data(
     farm_id: Optional[str] = Query(None, description="Filter by farm_id"),
@@ -166,17 +184,25 @@ def get_farms(db: pymysql.connections.Connection = Depends(get_db)):
 @app.get("/api/growth", tags=["Farm IoT"])
 def get_growth_data(
     farm_id: Optional[str] = Query(None, description="Filter by farm_id"),
+    start_date: Optional[datetime] = Query(None, description="Start datetime (e.g. 2026-01-01T00:00:00)"),
+    end_date: Optional[datetime] = Query(None, description="End datetime (e.g. 2026-12-31T23:59:59)"),
     db: pymysql.connections.Connection = Depends(get_db)
 ):
     sql = "SELECT id, farm_id, growth_progress_in_gdd, height, n_ears, notes, created_at FROM growth WHERE 1=1"
     params = []
-    
+
     if farm_id:
         sql += " AND farm_id = %s"
         params.append(farm_id)
-        
-    sql += " ORDER BY created_at DESC"
-    
+    if start_date:
+        sql += " AND created_at >= %s"
+        params.append(start_date)
+    if end_date:
+        sql += " AND created_at <= %s"
+        params.append(end_date)
+
+    sql += " ORDER BY created_at ASC"
+
     with db.cursor() as cur:
         cur.execute(sql, params)
         return cur.fetchall()

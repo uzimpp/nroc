@@ -86,11 +86,11 @@ export function fetchFarms(): Promise<string[]> {
 }
 
 /**
- * Latest sensor reading(s).
- * Omit farmId to get the latest reading across ALL farms.
+ * Latest single sensor reading. Uses the dedicated /latest endpoint (LIMIT 1)
+ * so it never scans the full table.
  */
 export function fetchLatestSensor(farmId?: string): Promise<SensorReading[]> {
-  return get<SensorReading[]>(`/api/sensors${qs({ farm_id: farmId })}`);
+  return get<SensorReading[]>(`/api/sensors/latest${qs({ farm_id: farmId })}`);
 }
 
 /**
@@ -107,13 +107,21 @@ export function fetchSensors(
   );
 }
 
-/** Growth observation logs. Omit farmId to fetch for all farms. */
-export function fetchGrowthLogs(farmId?: string): Promise<GrowthLog[]> {
-  return get<GrowthLog[]>(`/api/growth${qs({ farm_id: farmId })}`);
+/** Growth observation logs. Omit all params to fetch everything. */
+export function fetchGrowthLogs(
+  farmId?: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<GrowthLog[]> {
+  return get<GrowthLog[]>(`/api/growth${qs({ farm_id: farmId, start_date: startDate, end_date: endDate })}`);
 }
 
 export function fetchWeatherDaily(startDate: string, endDate: string): Promise<WeatherDaily[]> {
   return get<WeatherDaily[]>(`/api/weather/daily${qs({ start_date: startDate, end_date: endDate })}`);
+}
+
+export function fetchWeatherHourly(startDate: string, endDate: string): Promise<WeatherDaily[]> {
+  return get<WeatherDaily[]>(`/api/weather/hourly${qs({ start_date: startDate, end_date: endDate })}`);
 }
 
 export function fetchMarketPrices(startDate: string, endDate: string): Promise<MarketPrice[]> {

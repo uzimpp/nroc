@@ -27,17 +27,17 @@ const COND: Record<number, CondDef> = {
 };
 const DEFAULT_COND: CondDef = { label: "—", Icon: CloudSun, color: "text-slate-400" };
 
-export default function WeatherForecast({ forecast }: { forecast: WeatherDaily[] }) {
-  const days = forecast.slice(0, 5);
+export default function WeatherForecast({ forecast, maxDays = 5 }: { forecast: WeatherDaily[]; maxDays?: number }) {
+  const days = forecast.slice(0, maxDays);
 
   return (
     <Card noPad className="p-6">
-      <p className="label-caps mb-4">5-Day Forecast</p>
+      <p className="label-caps mb-4">{maxDays}-Day Forecast</p>
 
       {days.length === 0 ? (
         <p className="text-sm text-[--text-muted]">No forecast data available.</p>
       ) : (
-        <div className="grid grid-cols-5 gap-2">
+        <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
           {days.map((d, i) => {
             const { label, Icon, color } = d.cond !== null ? (COND[d.cond] ?? DEFAULT_COND) : DEFAULT_COND;
             const date = parseISO(d.forecast_date);

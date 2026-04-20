@@ -7,9 +7,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Plus, Download } from "lucide-react";
 import { fetchGrowthLogs, fetchFarms, type GrowthLog } from "@/lib/api";
-import { downloadCSV, todayStr } from "@/lib/csv";
 import GrowthTimeline from "@/components/GrowthTimeline";
-import GrowthLogForm from "@/components/GrowthLogForm";
+import GrowthLogForm, { CORN_STAGES } from "@/components/GrowthLogForm";
+import ExportCsvModal, { type ExportConfig } from "@/components/ExportCsvModal";
 import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -17,11 +17,12 @@ import Card from "@/components/ui/Card";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export default function GrowthPage() {
-  const [logs, setLogs]         = useState<GrowthLog[]>([]);
-  const [farmId, setFarmId]     = useState<string>("");
-  const [loading, setLoading]   = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [error, setError]       = useState("");
+  const [logs, setLogs]           = useState<GrowthLog[]>([]);
+  const [farmId, setFarmId]       = useState<string>("");
+  const [loading, setLoading]     = useState(true);
+  const [showForm, setShowForm]   = useState(false);
+  const [showExport, setExport]   = useState(false);
+  const [error, setError]         = useState("");
 
   const page = useRef<HTMLDivElement>(null);
 
@@ -44,26 +45,39 @@ export default function GrowthPage() {
     gsap.from(".tip-card", { x: 30, opacity: 0, stagger: 0.1, duration: 0.6, ease: "power2.out", delay: 0.3 });
     ScrollTrigger.batch(".animate-section", {
       onEnter: els => gsap.from(els, { y: 40, opacity: 0, stagger: 0.12, duration: 0.7, ease: "power2.out" }),
-      once: true, start: "top 88%",
+      start: "top 88%",
     });
-  }, { scope: page });
+  }, { scope: page, dependencies: [loading] });
 
   const sorted   = [...logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   const latest   = sorted.at(-1);
   const planting = sorted[0];
 
+  const growthExportConfig: ExportConfig = {
+    title: "Export Growth Logs",
+    description: "Download field observation records as a spreadsheet.",
+    filenamePrefix: "growth_logs",
+    preloaded: logs as unknown as Record<string, unknown>[],
+    fetchAll: (pre) => Promise.resolve(pre),
+    fetchRange: async (startIso, endIso) => {
+      const rows = await fetchGrowthLogs(undefined, startIso, endIso);
+      return rows as unknown as Record<string, unknown>[];
+    },
+    defaultStart: planting?.created_at?.slice(0, 10),
+  };
+
   return (
-    <div ref={page} className="max-w-5xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-8">
+    <div ref={page} className="max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 py-10 flex flex-col gap-8">
 
       <PageHeader
         eyebrow="Corn Growth"
         title="Growth Tracker"
-        description="Stage milestones and field observations. GDD uses the modified method (T_max capped at 30°C) for tropical conditions."
+        description="Stage milestones and field observations. Full 2,700 GDD scale from planting to black layer (R6 physiological maturity)."
         action={
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              onClick={() => downloadCSV(logs as unknown as Record<string, unknown>[], `growth_logs_${todayStr()}.csv`)}
+              onClick={() => setExport(true)}
               disabled={loading || logs.length === 0}
             >
               <Download size={14} className="mr-1.5" />Export CSV
@@ -83,9 +97,9 @@ export default function GrowthPage() {
       {!loading && logs.length === 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { title: "Start with planting", tip: "Log the Plant stage on your planting date." },
-            { title: "Observe by stage", tip: "Log each time you notice a new growth stage." },
-            { title: "Harvest at R3 (720 GDD)", tip: "At the milk stage, the corn is ready to pick." },
+            { title: "Start with planting (0 GDD)",   tip: "Log the Plant stage on your planting date to begin tracking heat accumulation." },
+            { title: "Observe each milestone",         tip: "Log VE → V-stages → VT/R1 (tasseling & silking) → R-stages as you walk the field." },
+            { title: "Maturity at R6 (2,700 GDD)",    tip: "Black layer forms at the base of kernels. Final yield is set. Grain is 30–35% moisture." },
           ].map(c => (
             <div key={c.title} className="tip-card card border-dashed p-5">
               <h3 className="text-sm font-semibold text-[--text-primary] mb-1">{c.title}</h3>
@@ -98,19 +112,27 @@ export default function GrowthPage() {
       {/* Summary strip */}
       {!loading && logs.length > 0 && (
         <div className="animate-section grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Total Entries",    value: logs.length.toString(),                                                       unit: "logs" },
-            { label: "Planting Date",    value: planting ? format(new Date(planting.created_at), "d MMM")                  : "—", unit: "" },
-            { label: "Last Observation", value: latest   ? format(new Date(latest.created_at),   "d MMM")                  : "—", unit: "" },
-            { label: "Latest GDD",       value: latest?.growth_progress_in_gdd ?? "—",                                       unit: "" },
-          ].map(s => (
-            <div key={s.label} className="card p-4">
-              <p className="label-caps mb-1.5">{s.label}</p>
-              <p className="data-num text-2xl font-semibold text-[--text-primary]">
-                {s.value} <span className="text-xs font-normal text-[--text-muted]">{s.unit}</span>
-              </p>
-            </div>
-          ))}
+          {(() => {
+            const latestGdd = latest ? parseFloat(latest.growth_progress_in_gdd) || 0 : null;
+            const latestStage = latestGdd !== null
+              ? CORN_STAGES.reduce((best, s) =>
+                  Math.abs(s.gdd - latestGdd) <= Math.abs(best.gdd - latestGdd) ? s : best
+                , CORN_STAGES[0])
+              : null;
+            return [
+              { label: "Total Entries",    value: logs.length.toString(),                                                               unit: "logs" },
+              { label: "Planting Date",    value: planting ? format(new Date(planting.created_at), "d MMM")                          : "—", unit: "" },
+              { label: "Last Observation", value: latest   ? format(new Date(latest.created_at),   "d MMM")                          : "—", unit: "" },
+              { label: "Current Stage",    value: latestStage ? latestStage.label                                                    : "—", unit: latestGdd ? `${latestGdd} GDD` : "" },
+            ].map(s => (
+              <div key={s.label} className="card p-4">
+                <p className="label-caps mb-1.5">{s.label}</p>
+                <p className="data-num text-2xl font-semibold text-[--text-primary]">
+                  {s.value} <span className="text-xs font-normal text-[--text-muted]">{s.unit}</span>
+                </p>
+              </div>
+            ));
+          })()}
         </div>
       )}
 
@@ -142,16 +164,24 @@ export default function GrowthPage() {
         <p className="text-sm font-semibold text-[--text-primary] mb-3">About Growing Degree Days (GDD)</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-[--text-muted] leading-relaxed">
           <p>
-            GDD measures heat accumulation needed for plant development.{" "}
-            <strong className="text-[--text-secondary]">Modified method (tropical)</strong>: caps T_max at 30°C and T_min at 10°C before averaging.
-            Formula: ((min(T_max, 30) + max(T_min, 10)) / 2) − 10.
+            GDD measures heat accumulation needed for plant development.
+            Standard formula: <strong className="text-[--text-secondary]">((T_max + T_min) / 2) − T_base</strong> where T_base = 10 °C.
+            Values are based on a corn product that produces 20 leaves and requires <strong className="text-[--text-secondary]">2,700 GDD to black layer</strong> with a normal planting date.
           </p>
           <p>
-            Sweet corn stage thresholds used: Plant (0) → VE (100) → V4 (200) → V8 (350) → VT/R1 (560) → R3 Harvest (720 GDD).
-            Source: tropical sweet corn agronomy data (base 10°C).
+            Key milestones: Plant (0) → VE (110) → V6 (520) → VT Tasseling (1,350) → R1 Silking (1,500)
+            → R2 Blister (1,700) → R3 Milk (1,875) → R4 Dough (1,950) → R5 Dent (2,300) → R6 Black Layer (2,700).
+            Source: standard USDA corn agronomy data (GDD base 10 °C).
           </p>
         </div>
       </div>
+
+      {showExport && (
+        <ExportCsvModal
+          config={growthExportConfig}
+          onClose={() => setExport(false)}
+        />
+      )}
 
       {showForm && farmId && (
         <GrowthLogForm

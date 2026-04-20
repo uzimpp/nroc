@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine, Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  Legend,
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { Thermometer, Droplets, Sprout, Sun } from "lucide-react";
@@ -14,10 +21,10 @@ export type Range = "7D" | "14D" | "30D";
 type Tab = "temp" | "humidity" | "moisture" | "light";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "temp",     label: "Temperature", icon: <Thermometer size={16} /> },
-  { id: "humidity", label: "Humidity",    icon: <Droplets   size={16} /> },
-  { id: "moisture", label: "Soil",        icon: <Sprout     size={16} /> },
-  { id: "light",    label: "Light",       icon: <Sun        size={16} /> },
+  { id: "temp", label: "Temperature", icon: <Thermometer size={16} /> },
+  { id: "humidity", label: "Humidity", icon: <Droplets size={16} /> },
+  { id: "moisture", label: "Soil", icon: <Sprout size={16} /> },
+  { id: "light", label: "Light", icon: <Sun size={16} /> },
 ];
 const RANGES: Range[] = ["7D", "14D", "30D"];
 
@@ -26,36 +33,67 @@ function avg(arr: number[]) {
 }
 
 function downsample(readings: SensorReading[]) {
-  const map = new Map<string, { temps: number[]; i2c: number[]; hums: number[]; moist: number[]; lights: number[] }>();
+  const map = new Map<
+    string,
+    {
+      temps: number[];
+      i2c: number[];
+      hums: number[];
+      moist: number[];
+      lights: number[];
+    }
+  >();
   for (const r of readings) {
     const d = parseISO(r.created_at);
     d.setMinutes(0, 0, 0);
     const key = d.toISOString();
-    if (!map.has(key)) map.set(key, { temps: [], i2c: [], hums: [], moist: [], lights: [] });
+    if (!map.has(key))
+      map.set(key, { temps: [], i2c: [], hums: [], moist: [], lights: [] });
     const b = map.get(key)!;
     if (r.temperature !== null) b.temps.push(r.temperature);
-    if (r.temp_i2c   !== null) b.i2c.push(r.temp_i2c);
-    if (r.humidity   !== null) b.hums.push(r.humidity);
-    if (r.moisture   !== null) b.moist.push(r.moisture);
-    if (r.light      !== null) b.lights.push(r.light);
+    if (r.temp_i2c !== null) b.i2c.push(r.temp_i2c);
+    if (r.humidity !== null) b.hums.push(r.humidity);
+    if (r.moisture !== null) b.moist.push(r.moisture);
+    if (r.light !== null) b.lights.push(r.light);
   }
   return Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, b]) => ({
-      time:     key,
-      temp:     avg(b.temps)  !== null ? +avg(b.temps)!.toFixed(1)  : null,
-      temp_i2c: avg(b.i2c)   !== null ? +avg(b.i2c)!.toFixed(2)   : null,
-      humidity: avg(b.hums)  !== null ? +avg(b.hums)!.toFixed(1)  : null,
+      time: key,
+      temp: avg(b.temps) !== null ? +avg(b.temps)!.toFixed(1) : null,
+      temp_i2c: avg(b.i2c) !== null ? +avg(b.i2c)!.toFixed(2) : null,
+      humidity: avg(b.hums) !== null ? +avg(b.hums)!.toFixed(1) : null,
       moisture: avg(b.moist) !== null ? +avg(b.moist)!.toFixed(1) : null,
-      light:    avg(b.lights)!== null ? +avg(b.lights)!.toFixed(0): null,
+      light: avg(b.lights) !== null ? +avg(b.lights)!.toFixed(0) : null,
     }));
 }
 
-const tickFmt  = (v: string) => { try { return format(parseISO(v), "d MMM HH:mm"); } catch { return v; } };
-const labelFmt = (v: unknown) => { try { return format(parseISO(String(v)), "d MMM yyyy HH:mm"); } catch { return String(v); } };
-const AXIS_STYLE = { fontSize: 10, fill: "var(--text-muted)", fontFamily: "var(--font-dm-mono, monospace)" };
+const tickFmt = (v: string) => {
+  try {
+    return format(parseISO(v), "d MMM HH:mm");
+  } catch {
+    return v;
+  }
+};
+const labelFmt = (v: unknown) => {
+  try {
+    return format(parseISO(String(v)), "d MMM yyyy HH:mm");
+  } catch {
+    return String(v);
+  }
+};
+const AXIS_STYLE = {
+  fontSize: 10,
+  fill: "var(--text-muted)",
+  fontFamily: "var(--font-dm-mono, monospace)",
+};
+const BEGIN_COLOR = "#10B981";
 
-export default function SensorChart({ readings, range, onRangeChange }: {
+export default function SensorChart({
+  readings,
+  range,
+  onRangeChange,
+}: {
   readings: SensorReading[];
   range: Range;
   onRangeChange: (r: Range) => void;
@@ -68,15 +106,17 @@ export default function SensorChart({ readings, range, onRangeChange }: {
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex gap-1 flex-wrap">
-          {TABS.map(t => (
+          {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`
                 flex items-center gap-1.5 px-3 py-1.5 rounded-[--radius-sm] text-[13px] font-medium transition-all duration-150
-                ${tab === t.id
-                  ? "bg-[--brand] text-[--text-on-dark]"
-                  : "text-[--text-secondary] hover:bg-[--bg-elevated] hover:text-[--text-primary]"}
+                ${
+                  tab === t.id
+                    ? "bg-[--brand] text-[--text-on-dark]"
+                    : "text-[--text-secondary] hover:bg-[--bg-elevated] hover:text-[--text-primary]"
+                }
               `}
             >
               {t.icon}
@@ -99,7 +139,38 @@ export default function SensorChart({ readings, range, onRangeChange }: {
             </button>
           ))}
         </div>
-      </div>
+        {data.length > 0 && (
+          <div className="flex items-center gap-2 text-sm font-medium">
+            {tab === "temp" && (
+              <>
+                <Thermometer size={14} className="text-red-500" />
+                <span className="text-red-600">{data[data.length - 1]?.temp}°C</span>
+                <span className="text-[--text-muted]">/</span>
+                <Thermometer size={14} className="text-orange-400 opacity-70" />
+                <span className="text-orange-500">{data[data.length - 1]?.temp_i2c}°C</span>
+              </>
+            )}
+            {tab === "humidity" && (
+              <>
+                <Droplets size={14} className="text-blue-500" />
+                <span className="text-blue-600">{data[data.length - 1]?.humidity}%</span>
+              </>
+            )}
+            {tab === "moisture" && (
+              <>
+                <Sprout size={14} className="text-emerald-500" />
+                <span className="text-emerald-600">{data[data.length - 1]?.moisture}%</span>
+              </>
+            )}
+            {tab === "light" && (
+              <>
+                <Sun size={14} className="text-amber-500" />
+                <span className="text-amber-600">{data[data.length - 1]?.light} lux</span>
+              </>
+            )}
+          </div>
+)}
+        </div>
 
       {data.length === 0 ? (
         <div className="h-64 flex items-center justify-center text-sm text-[--text-muted]">
@@ -108,42 +179,269 @@ export default function SensorChart({ readings, range, onRangeChange }: {
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           {tab === "temp" ? (
-            <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="time" tickFormatter={tickFmt} tick={AXIS_STYLE} interval="preserveStartEnd" minTickGap={60} />
-              <YAxis tick={AXIS_STYLE} unit="°C" width={42} domain={["auto", "auto"]} />
-              <Tooltip labelFormatter={labelFmt} formatter={(v, n) => [`${v}°C`, n === "temp" ? "DHT" : "I2C"]} />
-              <Legend wrapperStyle={AXIS_STYLE} formatter={v => v === "temp" ? "DHT Temp" : "I2C Temp"} />
-              <Line type="monotone" dataKey="temp"     stroke="#E05252" strokeWidth={2}   dot={false} connectNulls />
-              <Line type="monotone" dataKey="temp_i2c" stroke="#F0964A" strokeWidth={1.5} dot={false} connectNulls strokeDasharray="4 2" />
+              <XAxis
+                dataKey="time"
+                tickFormatter={tickFmt}
+                tick={AXIS_STYLE}
+                interval="preserveStartEnd"
+                minTickGap={60}
+              />
+              <YAxis
+                tick={AXIS_STYLE}
+                unit="°C"
+                width={42}
+                domain={["auto", "auto"]}
+              />
+              <Tooltip
+                labelFormatter={labelFmt}
+                formatter={(v, n) => [
+                  <span key={n} className="flex items-center gap-1">
+                    <Thermometer
+                      size={12}
+                      className={
+                        n === "temp" ? "text-red-500" : "text-orange-400"
+                      }
+                    />
+                    {v}°C
+                  </span>,
+                  n === "temp" ? "DHT" : "I2C",
+                ]}
+              />
+              <Legend
+                wrapperStyle={AXIS_STYLE}
+                formatter={(value) => {
+                  const icons: Record<string, React.ReactNode> = {
+                    "DHT Temp": (
+                      <>
+                        <Thermometer size={12} className="inline mr-1" />
+                        DHT Temp
+                      </>
+                    ),
+                    "I2C Temp": (
+                      <>
+                        <Thermometer
+                          size={12}
+                          className="inline mr-1 opacity-70"
+                        />
+                        I2C Temp
+                      </>
+                    ),
+                  };
+                  return icons[value] || value;
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="temp"
+                name="DHT Temp"
+                stroke="#E05252"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="temp_i2c"
+                name="I2C Temp"
+                stroke="#F0964A"
+                strokeWidth={1.5}
+                dot={false}
+                connectNulls
+                strokeDasharray="4 2"
+              />
+              {data[0] && (
+                <ReferenceLine
+                  x={data[0].time}
+                  stroke={BEGIN_COLOR}
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                />
+              )}
             </LineChart>
           ) : tab === "humidity" ? (
-            <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="time" tickFormatter={tickFmt} tick={AXIS_STYLE} interval="preserveStartEnd" minTickGap={60} />
+              <XAxis
+                dataKey="time"
+                tickFormatter={tickFmt}
+                tick={AXIS_STYLE}
+                interval="preserveStartEnd"
+                minTickGap={60}
+              />
               <YAxis tick={AXIS_STYLE} unit="%" width={38} domain={[0, 100]} />
-              <Tooltip labelFormatter={labelFmt} formatter={v => [`${v}%`, "Humidity"]} />
-              <ReferenceLine y={80} stroke="var(--amber)" strokeDasharray="4 3"
-                label={{ value: "80% risk", position: "insideTopRight", fontSize: 9, fill: "var(--amber)" }} />
-              <Line type="monotone" dataKey="humidity" stroke="#3B82F6" strokeWidth={2} dot={false} connectNulls />
+              <Tooltip
+                labelFormatter={labelFmt}
+                formatter={(v) => [
+                  <span key="hum" className="flex items-center gap-1">
+                    <Droplets size={12} className="text-blue-500" />
+                    {v}%
+                  </span>,
+                  "Humidity",
+                ]}
+              />
+              <Legend
+                wrapperStyle={AXIS_STYLE}
+                formatter={(value) => (
+                  <>
+                    <Droplets size={12} className="inline mr-1" />
+                    {value}
+                  </>
+                )}
+              />
+              <ReferenceLine
+                y={80}
+                stroke="var(--amber)"
+                strokeDasharray="4 3"
+                label={{
+                  value: "80% risk",
+                  position: "insideTopRight",
+                  fontSize: 9,
+                  fill: "var(--amber)",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="humidity"
+                name="Humidity"
+                stroke="#3B82F6"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+              {data[0] && (
+                <ReferenceLine
+                  x={data[0].time}
+                  stroke={BEGIN_COLOR}
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                />
+              )}
             </LineChart>
           ) : tab === "moisture" ? (
-            <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="time" tickFormatter={tickFmt} tick={AXIS_STYLE} interval="preserveStartEnd" minTickGap={60} />
+              <XAxis
+                dataKey="time"
+                tickFormatter={tickFmt}
+                tick={AXIS_STYLE}
+                interval="preserveStartEnd"
+                minTickGap={60}
+              />
               <YAxis tick={AXIS_STYLE} unit="%" width={38} domain={[0, 100]} />
-              <Tooltip labelFormatter={labelFmt} formatter={v => [`${v}%`, "Soil Moisture"]} />
-              <ReferenceLine y={30} stroke="var(--amber)" strokeDasharray="4 3"
-                label={{ value: "30% stress", position: "insideTopRight", fontSize: 9, fill: "var(--amber)" }} />
-              <Line type="monotone" dataKey="moisture" stroke="var(--brand-mid)" strokeWidth={2} dot={false} connectNulls />
+              <Tooltip
+                labelFormatter={labelFmt}
+                formatter={(v) => [
+                  <span key="moist" className="flex items-center gap-1">
+                    <Sprout size={12} className="text-emerald-500" />
+                    {v}%
+                  </span>,
+                  "Soil Moisture"
+                ]}
+              />
+              <Legend
+                wrapperStyle={AXIS_STYLE}
+                formatter={(value) => (
+                  <>
+                    <Sprout size={12} className="inline mr-1" />
+                    {value}
+                  </>
+                )}
+              />
+              <ReferenceLine
+                y={30}
+                stroke="var(--amber)"
+                strokeDasharray="4 3"
+                label={{
+                  value: "30% stress",
+                  position: "insideTopRight",
+                  fontSize: 9,
+                  fill: "var(--amber)",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="moisture"
+                name="Soil Moisture"
+                stroke="var(--brand-mid)"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+              {data[0] && (
+                <ReferenceLine
+                  x={data[0].time}
+                  stroke={BEGIN_COLOR}
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                />
+              )}
             </LineChart>
           ) : (
-            <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="time" tickFormatter={tickFmt} tick={AXIS_STYLE} interval="preserveStartEnd" minTickGap={60} />
-              <YAxis tick={AXIS_STYLE} unit=" lx" width={48} domain={["auto", "auto"]} />
-              <Tooltip labelFormatter={labelFmt} formatter={v => [`${v} lux`, "Light"]} />
-              <Line type="monotone" dataKey="light" stroke="var(--amber)" strokeWidth={2} dot={false} connectNulls />
+              <XAxis
+                dataKey="time"
+                tickFormatter={tickFmt}
+                tick={AXIS_STYLE}
+                interval="preserveStartEnd"
+                minTickGap={60}
+              />
+              <YAxis
+                tick={AXIS_STYLE}
+                unit=" lx"
+                width={48}
+                domain={["auto", "auto"]}
+              />
+              <Tooltip
+                labelFormatter={labelFmt}
+                formatter={(v) => [
+                  <span key="light" className="flex items-center gap-1">
+                    <Sun size={12} className="text-amber-500" />
+                    {v} lux
+                  </span>,
+                  "Light"
+                ]}
+              />
+              <Legend
+                wrapperStyle={AXIS_STYLE}
+                formatter={(value) => (
+                  <>
+                    <Sun size={12} className="inline mr-1" />
+                    {value}
+                  </>
+                )}
+              />
+              <Line
+                type="monotone"
+                dataKey="light"
+                name="Light"
+                stroke="var(--amber)"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+              {data[0] && (
+                <ReferenceLine
+                  x={data[0].time}
+                  stroke={BEGIN_COLOR}
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                />
+              )}
             </LineChart>
           )}
         </ResponsiveContainer>

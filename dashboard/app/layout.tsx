@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans, DM_Mono } from "next/font/google";
 import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -35,9 +36,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       lang="en"
       className={`${cormorant.variable} ${dmSans.variable} ${dmMono.variable}`}
     >
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-[100dvh] flex flex-col overflow-x-hidden">
         <Nav />
         <div className="flex-1">{children}</div>
+        <Footer />
       </body>
     </html>
   );

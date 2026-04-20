@@ -36,6 +36,7 @@
   --shadow-lg: 0 16px 56px rgba(26,23,20,0.14);
   --shadow-green: 0 8px 32px rgba(26,56,40,0.18);
 
+  --black: var(--text-primary);
   /* Geometry */
   --radius-sm:   10px;
   --radius-md:   16px;
@@ -179,4 +180,44 @@ body::after {
 .will-animate {
   opacity: 0;
   transform: translateY(24px);
+}
+
+/* ── Marquee ticker ──────────────────────────────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 48s linear infinite;
+  will-change: transform;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── Clip-path line reveal ───────────────────────────────────────────────── */
+.line-clip {
+  overflow: hidden;
+  display: block;
+}
+.line-clip > span {
+  display: block;
+}
+
+/* ── Section divider rule ────────────────────────────────────────────────── */
+.section-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  width: 100%;
+}
+
+/* ── Cursor follow (opt-in) ──────────────────────────────────────────────── */
+@keyframes blink-bar {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.cursor-bar::after {
+  content: '|';
+  margin-left: 2px;
+  animation: blink-bar 1s step-start infinite;
 }

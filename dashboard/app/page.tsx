@@ -1,280 +1,372 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
-import { format, subDays } from "date-fns";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { Activity, Sprout, TrendingUp, ArrowRight } from "lucide-react";
 import {
-  fetchLatestSensor, fetchGrowthLogs, fetchMarketPrices,
-  type SensorReading, type GrowthLog, type MarketPrice,
-} from "@/lib/api";
-import StatCard from "@/components/StatCard";
-import { Thermometer, Droplets, Sun } from "lucide-react";
+  ArrowRight,
+  Activity,
+  Sprout,
+  TrendingUp,
+  LayoutDashboard,
+} from "lucide-react";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const HARVEST_GDD = 750;
-
-function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
-
-function MinutesAgo({ iso }: { iso: string | undefined }) {
-  if (!iso) return null;
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  const label = diff < 60 ? `${diff}m ago` : `${Math.floor(diff / 60)}h ago`;
-  return <span className="label-caps text-[--text-muted]">Updated {label}</span>;
-}
-
-function GddRing({ pct }: { pct: number }) {
-  const r = 48;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (Math.min(pct, 100) / 100) * circ;
-  return (
-    <svg width={120} height={120} className="-rotate-90">
-      <circle cx={60} cy={60} r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={10} />
-      <circle
-        cx={60} cy={60} r={r} fill="none"
-        stroke="white" strokeWidth={10}
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)" }}
-      />
-    </svg>
-  );
-}
+const FEATURES = [
+  {
+    num: "01",
+    title: "Sensor\nIntelligence",
+    body: "Real-time IoT telemetry from FARM_001 — temperature, humidity, soil moisture and light intensity streamed continuously from the field.",
+    tag: "IoT · MQTT · FARM_001",
+    img: "https://picsum.photos/seed/soil-farm/900/700",
+  },
+  {
+    num: "02",
+    title: "Weather\nForecasting",
+    body: "7-day forecasts from the Thai Meteorological Department integrated into GDD calculations for precise harvest window planning.",
+    tag: "TMD · 7-day · GDD",
+    img: "https://picsum.photos/seed/overcast-sky/900/700",
+  },
+];
 
 const NAV_CARDS = [
+  {
+    href: "/overview",
+    Icon: LayoutDashboard,
+    title: "Overview",
+    desc: "All field conditions, GDD curve, market prices and weather in one view.",
+  },
   {
     href: "/monitor",
     Icon: Activity,
     title: "Field Monitor",
-    desc: "Deep-dive into IoT sensor readings, weather forecasts and field conditions over time.",
-    accent: "var(--brand-mid)",
+    desc: "Deep-dive into sensor history, weather and field conditions over time.",
   },
   {
     href: "/growth",
     Icon: Sprout,
     title: "Corn Growth",
-    desc: "Track GDD accumulation, crop milestones and log field observations at any date.",
-    accent: "var(--brand)",
+    desc: "GDD accumulation, crop milestones, and field observation logs.",
   },
   {
     href: "/market",
     Icon: TrendingUp,
     title: "Market Prices",
-    desc: "Analyse Talad Thai corn price trends across small, medium and large grades.",
-    accent: "var(--amber)",
+    desc: "Price trends across small, medium and large corn grades.",
   },
 ];
 
-export default function LandingPage() {
-  const [sensor, setSensor]   = useState<SensorReading | null>(null);
-  const [growth, setGrowth]   = useState<GrowthLog[]>([]);
-  const [prices, setPrices]   = useState<MarketPrice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
+const TICKER_BASE = [
+  "IoT Sensors",
+  "TMD Weather",
+  "Talad Thai Prices",
+  "GDD Tracking",
+  "Sweet Corn Intelligence",
+  "FARM_001",
+  "Real-time Telemetry",
+  "Harvest Planning",
+  "Base-10 GDD Scale",
+  "Thai Agriculture",
+  "Smart Farming",
+  "Field Analytics",
+];
+const TICKER = [...TICKER_BASE, ...TICKER_BASE];
 
+export default function LandingPage() {
   const page = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
-    setError("");
-    try {
-      const now = new Date();
-      const [sensors, logs, mkt] = await Promise.all([
-        fetchLatestSensor(),
-        fetchGrowthLogs(),
-        fetchMarketPrices(isoDate(subDays(now, 7)), isoDate(now)),
-      ]);
-      setSensor(sensors[0] ?? null);
-      setGrowth(logs);
-      setPrices(mkt);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not reach the API.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useGSAP(
+    () => {
+      // Hero entrance
+      gsap.from(".hero-eyebrow", {
+        y: 24,
+        opacity: 0,
+        duration: 0.7,
+        ease: "power3.out",
+      });
+      gsap.from(".hero-line", {
+        y: 100,
+        opacity: 0,
+        stagger: 0.11,
+        duration: 1.1,
+        ease: "power4.out",
+        delay: 0.1,
+      });
+      gsap.from(".hero-body", {
+        y: 20,
+        opacity: 0,
+        duration: 0.7,
+        ease: "power2.out",
+        delay: 0.6,
+      });
+      gsap.from(".hero-cta", {
+        y: 18,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.65,
+        ease: "power2.out",
+        delay: 0.75,
+      });
+      gsap.from(".hero-img-wrap", {
+        scale: 1.07,
+        opacity: 0,
+        duration: 1.6,
+        ease: "power2.out",
+        delay: 0.05,
+      });
 
-  useEffect(() => { load(); }, [load]);
+      // Feature image parallax scrub
+      gsap.utils.toArray<HTMLElement>(".parallax-img").forEach((img) => {
+        gsap.fromTo(
+          img,
+          { yPercent: -10 },
+          {
+            yPercent: 10,
+            ease: "none",
+            scrollTrigger: {
+              trigger: img,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 1.8,
+            },
+          },
+        );
+      });
 
-  useGSAP(() => {
-    gsap.from(".hero-line", { y: 60, opacity: 0, stagger: 0.14, duration: 1, ease: "power3.out" });
-    gsap.from(".stat-card",  { y: 40, opacity: 0, stagger: 0.09, duration: 0.7, ease: "power2.out", delay: 0.6 });
-    gsap.from(".status-strip", { y: 30, opacity: 0, duration: 0.6, ease: "power2.out", delay: 1 });
-    ScrollTrigger.batch(".nav-card", {
-      onEnter: els => gsap.from(els, { y: 50, opacity: 0, stagger: 0.13, duration: 0.75, ease: "power2.out" }),
-      once: true, start: "top 90%",
-    });
-  }, { scope: page });
+      // Feature panel entrance
+      ScrollTrigger.batch(".feature-panel", {
+        onEnter: (els) =>
+          gsap.from(els, {
+            y: 70,
+            opacity: 0,
+            stagger: 0.18,
+            duration: 1.0,
+            ease: "power3.out",
+          }),
+        once: true,
+        start: "top 84%",
+      });
 
-  const latestLog  = [...growth].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-  const currentGdd = latestLog ? parseFloat(latestLog.growth_progress_in_gdd) : NaN;
-  const validGdd   = Number.isFinite(currentGdd) ? currentGdd : 0;
-  const gddPct     = Math.min((validGdd / HARVEST_GDD) * 100, 100);
-
-  const medPrice = prices
-    .filter(p => p.product_id === 206)
-    .sort((a, b) => b.record_date.localeCompare(a.record_date))[0];
-
-  const temp     = sensor?.temp_i2c ?? sensor?.temperature ?? null;
-  const moisture = sensor?.moisture ?? null;
-
-  function soilSubtitle() {
-    if (moisture === null) return undefined;
-    if (moisture < 30) return "⚠️ Low — check irrigation";
-    if (moisture > 70) return "Well saturated";
-    return "Good level";
-  }
+      // Nav cards entrance
+      ScrollTrigger.batch(".nav-card", {
+        onEnter: (els) =>
+          gsap.from(els, {
+            y: 55,
+            opacity: 0,
+            stagger: 0.08,
+            duration: 0.8,
+            ease: "power3.out",
+          }),
+        once: true,
+        start: "top 86%",
+      });
+    },
+    { scope: page },
+  );
 
   return (
-    <div ref={page} className="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-12">
-
+    <div ref={page} className="overflow-x-hidden w-full max-w-full">
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-[--radius-xl] bg-[--brand] px-8 py-12 shadow-[--shadow-lg]">
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -bottom-16 -left-10 w-56 h-56 rounded-full bg-black/10 pointer-events-none" />
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+        {/* Background image — right half */}
+        <div className="hero-img-wrap absolute inset-y-0 right-0 w-full lg:w-[54%] pointer-events-none overflow-hidden">
+          <div
+            className="parallax-img absolute inset-0 bg-cover bg-center scale-110"
+            style={{
+              backgroundImage:
+                "url('https://picsum.photos/seed/corn-harvest/1200/900')",
+              filter: "contrast(1.08) brightness(0.85) saturate(0.9)",
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-base via-bg-base/75 to-bg-base/10" />
+        </div>
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-10">
-          <div className="flex-1">
-            <p className="hero-line label-caps text-white/50 mb-5">
-              {format(new Date(), "EEEE, d MMMM yyyy")} · Corn Field Dashboard
+        {/* Text */}
+        <div className="relative z-10 max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16 w-full py-24 sm:py-32">
+          <div className="max-w-[800px]">
+            <p className="hero-eyebrow label-caps text-[--text-muted] mb-8 tracking-[0.2em]">
+              Agricultural IoT &ensp;&middot;&ensp; Sweet Corn Intelligence
             </p>
-            <h1 className="hero-line display-italic text-5xl sm:text-6xl text-[--text-on-dark] leading-[1.05] mb-4">
-              Your field,<br />
-              <span className="text-white/60">always in sight.</span>
+
+            <h1
+              className="leading-[0.88] tracking-tighter mb-10"
+              style={{ fontSize: "clamp(4rem, 8.5vw, 10rem)" }}
+            >
+              <span className="hero-line display-italic block">
+                Your field,
+              </span>
+              <span className="hero-line display-italic block text-[--brand-mid]">
+                always
+              </span>
+              <span className="hero-line display block text-[--amber]">
+                in sight.
+              </span>
             </h1>
-            <p className="hero-line text-white/50 text-sm sm:text-base max-w-md leading-relaxed">
-              IoT sensors · TMD weather forecasts · Talad Thai market prices — unified in one dashboard.
-            </p>
-          </div>
 
-          {/* GDD ring */}
-          <div className="hero-line flex flex-col items-center gap-3 flex-shrink-0">
-            <div className="relative">
-              <GddRing pct={loading ? 0 : gddPct} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center rotate-90">
-                <span className="data-num text-2xl font-semibold text-white leading-none">{validGdd.toFixed(0)}</span>
-                <span className="label-caps text-white/50 mt-0.5">GDD</span>
+            <p className="hero-body text-text-secondary text-secondary sm:text-lg leading-relaxed mb-11 max-w-100">
+              IoT sensors, TMD weather forecasts, and Talad Thai market prices —
+              unified in one dashboard.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-5">
+              <Link
+                href="/overview"
+                className="hero-cta group inline-flex items-center gap-3 bg-brand text-on-dark px-8 py-4 rounded-full text-sm font-semibold hover:bg-brand-mid transition-all duration-300 shadow-green"
+              >
+                Open Dashboard
+                <ArrowRight
+                  size={15}
+                  className="group-hover:translate-x-1.5 transition-transform duration-200"
+                />
+              </Link>
+              <a
+                href="#features"
+                className="hero-cta group inline-flex items-center gap-3 text-secondary text-sm font-medium hover:text-primary transition-colors duration-200"
+              >
+                Explore features
+                <span className="block w-6 h-px bg-current group-hover:w-10 transition-all duration-300" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Marquee ticker ───────────────────────────────────────────────────── */}
+      <div
+        className="overflow-hidden border-y border-brand/20 bg-brand py-3.5 select-none"
+        aria-hidden="true"
+      >
+        <div className="marquee-track flex">
+          {TICKER.map((item, i) => (
+            <span
+              key={i}
+              className="label-caps text-white/45 whitespace-nowrap flex items-center gap-10 px-10"
+            >
+              {item}
+              <span className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Feature panels (parallax) ────────────────────────────────────────── */}
+      <section
+        id="features"
+        className="py-28 sm:py-44 max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16"
+      >
+        <div className="mb-20 sm:mb-32">
+          <h2
+            className="display text-text-primary leading-[0.92] tracking-tighter"
+            style={{ fontSize: "clamp(3rem, 6.5vw, 7rem)" }}
+          >
+            One dashboard.
+            <br />
+            <span className="display-italic text-[--brand-mid]">
+              Everything you need.
+            </span>
+          </h2>
+        </div>
+
+        <div className="flex flex-col gap-28 sm:gap-40">
+          {FEATURES.map((f, i) => (
+            <div
+              key={f.num}
+              className="feature-panel grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+            >
+              {/* Image */}
+              <div
+                className={`overflow-hidden rounded-radius-xl aspect-[4/3] bg-[--bg-elevated] group ${
+                  i % 2 === 1 ? "lg:order-2" : ""
+                }`}
+              >
+                <div
+                  className="parallax-img w-full h-[120%] -mt-[10%] bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  style={{
+                    backgroundImage: `url('${f.img}')`,
+                    filter: "grayscale(0.12) contrast(1.06)",
+                  }}
+                />
+              </div>
+
+              {/* Text */}
+              <div className={i % 2 === 1 ? "lg:order-1" : ""}>
+                <span className="data-num text-[--text-muted] text-xs mb-6 block tracking-[0.15em]">
+                  {f.num}
+                </span>
+                <h3
+                  className="display text-primary leading-[0.93] tracking-tighter mb-6 whitespace-pre-line"
+                  style={{ fontSize: "clamp(2.5rem, 4.5vw, 4.5rem)" }}
+                >
+                  {f.title}
+                </h3>
+                <p className="text-secondary leading-relaxed text-base sm:text-lg mb-6 max-w-[360px]">
+                  {f.body}
+                </p>
+                <span className="label-caps text-brand-mid tracking-[0.18em]">
+                  {f.tag}
+                </span>
               </div>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-white/50">of {HARVEST_GDD} to harvest</p>
-              {validGdd > 0 && (
-                <p className="data-num text-xs font-semibold text-white/80 mt-0.5">{gddPct.toFixed(0)}% complete</p>
-              )}
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Error ────────────────────────────────────────────────────────────── */}
-      {error && (
-        <div className="rounded-[--radius-md] bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
+      {/* ── Navigation cards (dark) ──────────────────────────────────────────── */}
+      <section className="py-24 sm:py-36 bg-brand-mid">
+        <div className="max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16">
+          <div className="mb-14 sm:mb-20 flex items-end justify-between gap-6">
+            <h2
+              className="display-italic text-text-on-dark leading-[0.90] tracking-tighter"
+              style={{ fontSize: "clamp(2.8rem, 5.5vw, 6rem)" }}
+            >
+              Explore the
+              <br />
+              <span className="text-base">dashboard</span>
+            </h2>
+            <Link
+              href="/overview"
+              className="hidden sm:inline-flex items-center gap-2 text-base/67 hover:text-base text-xs transition-colors duration-200 shrink-0 mb-2 group"
+            >
+              Open all
+              <ArrowRight
+                size={13}
+                className="group-hover:translate-x-1 transition-transform duration-200"
+              />
+            </Link>
+          </div>
 
-      {/* ── Stat Cards ───────────────────────────────────────────────────────── */}
-      <section>
-        <div className="flex items-center justify-between mb-5">
-          <p className="label-caps">Today&apos;s Field Conditions</p>
-          <MinutesAgo iso={sensor?.created_at} />
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="card h-32 animate-pulse bg-[--bg-elevated]" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 grid-flow-dense border border-base/8 rounded-radius-xl overflow-hidden divide-x divide-y divide-base/8">
+            {NAV_CARDS.map(({ href, Icon, title, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="nav-card group flex flex-col gap-10 p-8 sm:p-10 bg--brand hover:bg--brand-mid transition-colors duration-300"
+              >
+                <Icon
+                  size={22}
+                  className="text-base/25 group-hover:text-base/60 transition-colors duration-300"
+                />
+                <div className="flex flex-col gap-2.5 flex-1">
+                  <h3
+                    className="display text-[--text-on-dark] leading-tight"
+                    style={{ fontSize: "clamp(1.6rem, 2.8vw, 2.4rem)" }}
+                  >
+                    {title}
+                  </h3>
+                  <p className="text-base/40 text-sm leading-relaxed group-hover:text-base/60 transition-colors duration-300">
+                    {desc}
+                  </p>
+                </div>
+                <ArrowRight
+                  size={15}
+                  className="text-base/20 group-hover:text-base/60 group-hover:translate-x-2 transition-all duration-300"
+                />
+              </Link>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Temperature"     rawValue={temp}                      unit="°C"  icon={<Thermometer size={20} />} decimals={1} valueColor="var(--red,#E05252)" />
-            <StatCard label="Humidity"        rawValue={sensor?.humidity ?? null}  unit="%"   icon={<Droplets   size={20} />} decimals={1} valueColor="#3B82F6" />
-            <StatCard label="Soil Moisture"   rawValue={moisture}                  unit="%"   icon={<Sprout     size={20} />} decimals={1} valueColor="var(--brand-mid)"
-              alert={moisture !== null && moisture < 30} subtitle={soilSubtitle()} />
-            <StatCard label="Light Intensity" rawValue={sensor?.light ?? null}     unit="lux" icon={<Sun        size={20} />} decimals={0} valueColor="var(--amber)" />
-          </div>
-        )}
-      </section>
-
-      {/* ── Status Strip ─────────────────────────────────────────────────────── */}
-      {!loading && (
-        <div className="status-strip grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* GDD progress */}
-          <div className="card p-6">
-            <p className="label-caps mb-4">GDD Progress to Harvest</p>
-            <div className="flex items-end justify-between mb-3">
-              <span className="data-num text-4xl font-semibold text-[--brand]">{validGdd.toFixed(0)}</span>
-              <span className="text-sm text-[--text-muted] pb-1">/ {HARVEST_GDD} GDD</span>
-            </div>
-            <div className="h-2 rounded-full bg-[--bg-elevated] mb-3">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[--brand-mid] to-[--brand] transition-all duration-1000"
-                style={{ width: `${gddPct}%` }}
-              />
-            </div>
-            <p className="text-xs text-[--text-muted]">
-              {validGdd >= 700
-                ? "Ready to harvest!"
-                : `${(HARVEST_GDD - validGdd).toFixed(0)} GDD remaining to harvest window`}
-            </p>
-          </div>
-
-          {/* Latest market price */}
-          <div className="card p-6">
-            <p className="label-caps mb-4">Today&apos;s Market Price</p>
-            {medPrice ? (
-              <>
-                <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="data-num text-4xl font-semibold text-[--amber]">
-                    ฿{medPrice.price_max !== null ? Number(medPrice.price_max).toFixed(2) : "—"}
-                  </span>
-                  <span className="text-sm text-[--text-muted]">/ kg</span>
-                </div>
-                <p className="text-xs text-[--text-muted]">
-                  Medium grade · {format(new Date(medPrice.record_date), "d MMM yyyy")}
-                  {medPrice.price_min !== null && ` · Low ฿${Number(medPrice.price_min).toFixed(2)}`}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-[--text-muted]">No price data available.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Navigation Cards ─────────────────────────────────────────────────── */}
-      <section className="pb-6">
-        <p className="label-caps mb-6">Explore</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {NAV_CARDS.map(card => {
-            const CardIcon = card.Icon;
-            return (
-              <Link
-                key={card.href}
-                href={card.href}
-                className="nav-card card card-interactive group relative overflow-hidden p-6 flex flex-col gap-4"
-              >
-                <div className="w-11 h-11 rounded-[--radius-md] bg-[--bg-elevated] flex items-center justify-center
-                  group-hover:scale-110 transition-transform duration-300">
-                  <CardIcon size={22} style={{ color: card.accent }} />
-                </div>
-
-                <div>
-                  <h3 className="display text-xl mb-1.5" style={{ color: card.accent }}>{card.title}</h3>
-                  <p className="text-sm text-[--text-secondary] leading-relaxed">{card.desc}</p>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs font-semibold mt-auto" style={{ color: card.accent }}>
-                  Open
-                  <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-200" />
-                </div>
-
-                <div className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full bg-[--bg-elevated] opacity-60 pointer-events-none" />
-              </Link>
-            );
-          })}
         </div>
       </section>
     </div>

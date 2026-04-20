@@ -7,8 +7,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { RefreshCw, Download } from "lucide-react";
 import { fetchMarketPrices, type MarketPrice } from "@/lib/api";
-import { downloadCSV, todayStr } from "@/lib/csv";
 import PriceChart, { type PriceRange } from "@/components/PriceChart";
+import ExportCsvModal, { type ExportConfig } from "@/components/ExportCsvModal";
 import PageHeader from "@/components/layout/PageHeader";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -78,6 +78,7 @@ export default function MarketPage() {
   const [range, setRange]     = useState<PriceRange>("30D");
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
+  const [showExport, setShowExport] = useState(false);
 
   const page = useRef<HTMLDivElement>(null);
 
@@ -115,8 +116,20 @@ export default function MarketPage() {
     .sort((a, b) => b.record_date.localeCompare(a.record_date))
     .slice(0, 14);
 
+  const marketExportConfig: ExportConfig = {
+    title: "Export Market Prices",
+    description: "Download Talad Thai corn price data as a spreadsheet.",
+    filenamePrefix: "market_prices",
+    preloaded: prices as unknown as Record<string, unknown>[],
+    fetchAll: (pre) => Promise.resolve(pre),
+    fetchRange: async (startIso, endIso) => {
+      const rows = await fetchMarketPrices(startIso.slice(0, 10), endIso.slice(0, 10));
+      return rows as unknown as Record<string, unknown>[];
+    },
+  };
+
   return (
-    <div ref={page} className="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-8">
+    <div ref={page} className="max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 py-10 flex flex-col gap-8">
 
       <PageHeader
         eyebrow="Talad Thai Market"
@@ -126,7 +139,7 @@ export default function MarketPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              onClick={() => downloadCSV(prices as unknown as Record<string, unknown>[], `market_prices_${todayStr()}.csv`)}
+              onClick={() => setShowExport(true)}
               disabled={loading || prices.length === 0}
             >
               <Download size={14} className="mr-1.5" />Export CSV
@@ -164,52 +177,22 @@ export default function MarketPage() {
         )}
       </div>
 
-      {/* Recent medium grade table */}
-      {!loading && recentMed.length > 0 && (
-        <Card className="animate-section p-6">
-          <p className="label-caps mb-5">
-            Medium Grade — Recent History
-            <span className="ml-2 text-[--text-muted] font-normal normal-case">(last 14 days)</span>
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[--border]">
-                  {["Date", "Price (High)", "Price (Low)", "Unit"].map(h => (
-                    <th key={h} className="pb-2.5 pr-6 text-left label-caps !text-[9px]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentMed.map(p => (
-                  <tr key={p.id} className="border-b border-[--border] last:border-0 hover:bg-[--bg-elevated] transition-colors">
-                    <td className="py-2.5 pr-6 text-[--text-muted] whitespace-nowrap">
-                      {format(new Date(p.record_date), "d MMM yyyy")}
-                    </td>
-                    <td className="py-2.5 pr-6 data-num font-semibold text-[--brand]">
-                      {p.price_max !== null ? `฿${Number(p.price_max).toFixed(2)}` : "—"}
-                    </td>
-                    <td className="py-2.5 pr-6 data-num text-[--text-secondary]">
-                      {p.price_min !== null ? `฿${Number(p.price_min).toFixed(2)}` : "—"}
-                    </td>
-                    <td className="py-2.5 text-[--text-muted] text-xs">{p.unit}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
-
       {/* Info note */}
-      <div className="animate-section rounded-[--radius-lg] bg-amber-50 border border-amber-100 p-5 text-sm text-amber-800">
-        <p className="font-semibold mb-1.5">About price data</p>
-        <p className="text-xs leading-relaxed text-amber-700">
+      <div className="animate-section rounded-[--radius-lg] bg-[--amber-light] border border-[--border] p-5 text-sm">
+        <p className="font-semibold mb-1.5 text-[--amber]">About price data</p>
+        <p className="text-xs leading-relaxed text-[--text-secondary]">
           Prices are sourced from Talad Thai (ตลาดไท) and updated daily. They reflect the wholesale market
-          price range for fresh sweet corn. <strong>Large grade</strong> (product 182) typically commands
-          the highest price; <strong>small grade</strong> (product 216) the lowest.
+          price range for fresh sweet corn. <strong className="text-[--text-primary]">Large grade</strong> (product 182) typically commands
+          the highest price; <strong className="text-[--text-primary]">small grade</strong> (product 216) the lowest.
         </p>
       </div>
+
+      {showExport && (
+        <ExportCsvModal
+          config={marketExportConfig}
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </div>
   );
 }
