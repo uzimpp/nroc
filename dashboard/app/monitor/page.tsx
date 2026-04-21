@@ -58,12 +58,14 @@ const [loading, setLoading]       = useState(true);
     const start  = subDays(now, RANGE_DAYS[r]);
     const future = addDays(now, 7);
     try {
-      const [sens, wx] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchSensors(start.toISOString(), now.toISOString()),
         fetchWeatherDaily(isoDate(now), isoDate(future)),
       ]);
-      setReadings(sens);
-      setWeather(wx);
+
+      const [sensResult, wxResult] = results;
+      if (sensResult.status === "fulfilled") setReadings(sensResult.value);
+      if (wxResult.status === "fulfilled") setWeather(wxResult.value);
       setLastUpdate(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data.");

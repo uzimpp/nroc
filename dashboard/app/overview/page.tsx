@@ -23,7 +23,7 @@ import PriceCards from "./components/PriceCards";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const FARM_ID   = "FARM_001";
+const FARM_ID   = "1";
 const R3_GDD    = 1875; // Sweet corn harvest target (Milk stage)
 const TOTAL_GDD = 2700; // Full maturity (R6 Black Layer)
 
@@ -68,7 +68,10 @@ export default function OverviewPage() {
       const now = new Date();
 
       // Get growth logs first — we need the planting date for sensor range
-      const growthLogs = await fetchGrowthLogs(FARM_ID);
+      const growthLogsResult = await Promise.allSettled([fetchGrowthLogs(FARM_ID)]);
+      const growthLogs = growthLogsResult[0].status === "fulfilled" ? growthLogsResult[0].value : [];
+      setLogs(growthLogs);
+      
       const plantingLog = [...growthLogs]
         .sort((a, b) => a.created_at.localeCompare(b.created_at))
         .find(l => parseFloat(l.growth_progress_in_gdd) === 0);
@@ -76,18 +79,21 @@ export default function OverviewPage() {
         ? new Date(plantingLog.created_at)
         : subDays(now, 90);
 
-      const [latestRows, sensorRows, wx, mkt] = await Promise.all([
+      // Fetch remaining data in parallel, but handle each separately
+      const results = await Promise.allSettled([
         fetchLatestSensor(FARM_ID),
         fetchSensors(plantingDate.toISOString(), now.toISOString(), FARM_ID),
         fetchWeatherDaily(isoDate(now), isoDate(addDays(now, 7))),
         fetchMarketPrices(isoDate(subDays(now, 32)), isoDate(now)),
       ]);
 
-      setLatest(latestRows[0] ?? null);
-      setReadings(sensorRows);
-      setLogs(growthLogs);
-      setWeather(wx);
-      setPrices(mkt);
+      const [latestResult, sensorResult, wxResult, mktResult] = results;
+
+      if (latestResult.status === "fulfilled") setLatest(latestResult.value[0] ?? null);
+      if (sensorResult.status === "fulfilled") setReadings(sensorResult.value);
+      if (wxResult.status === "fulfilled") setWeather(wxResult.value);
+      if (mktResult.status === "fulfilled") setPrices(mktResult.value);
+
       setLastUpdate(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data.");

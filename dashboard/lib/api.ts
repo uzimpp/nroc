@@ -121,7 +121,7 @@ export function fetchWeatherDaily(startDate: string, endDate: string): Promise<W
 }
 
 export function fetchWeatherHourly(startDate: string, endDate: string): Promise<WeatherDaily[]> {
-  return get<WeatherDaily[]>(`/api/weather/hourly${qs({ start_date: startDate, end_date: endDate })}`);
+  return get<WeatherDaily[]>(`/api/weather/hourly${qs({ start_time: startDate, end_time: endDate })}`);
 }
 
 export function fetchMarketPrices(startDate: string, endDate: string): Promise<MarketPrice[]> {

@@ -29,9 +29,10 @@ export default function GrowthPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const [growthLogs, farms] = await Promise.all([fetchGrowthLogs(), fetchFarms()]);
-      setLogs(growthLogs);
-      if (farms.length > 0) setFarmId(farms[0]);
+      const results = await Promise.allSettled([fetchGrowthLogs(), fetchFarms()]);
+      const [logsResult, farmsResult] = results;
+      if (logsResult.status === "fulfilled") setLogs(logsResult.value);
+      if (farmsResult.status === "fulfilled" && farmsResult.value.length > 0) setFarmId(farmsResult.value[0]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load growth data.");
     } finally {

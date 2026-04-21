@@ -52,10 +52,13 @@ function buildRows(prices: MarketPrice[]): DayRow[] {
         date: key,
         smallMin: null,
         smallMax: null,
+        smallRange: null,
         medMin: null,
         medMax: null,
+        medRange: null,
         largeMin: null,
         largeMax: null,
+        largeRange: null,
       });
     const row = map.get(key)!;
     const g = PRODUCTS[p.product_id];
@@ -216,39 +219,77 @@ export default function PriceChart({
               width={50}
               domain={yDomain}
               ticks={Array.from(
-                { length: Math.ceil(yDomain[1] / 4) + 0.5},
+                { length: Math.ceil(yDomain[1] / 4) + 0.5 },
                 (_, i) => i * 4,
               )}
             />
             <Tooltip
-              cursor={{ stroke: "var(--border-strong)", strokeWidth: 1, strokeDasharray: "4 3" }}
+              cursor={{
+                stroke: "var(--border-strong)",
+                strokeWidth: 1,
+                strokeDasharray: "4 3",
+              }}
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
                 const d = payload[0]?.payload as DayRow & { date: string };
                 if (!d) return null;
                 let dateLabel = d.date;
-                try { dateLabel = format(parseISO(d.date), "d MMM yyyy"); } catch { /* noop */ }
-                const rows: { label: string; color: string; min: number | null; max: number | null }[] = [
-                  { label: "Large",  color: "#1D4ED8",          min: d.largeMin, max: d.largeMax },
-                  { label: "Medium", color: "var(--brand-mid)", min: d.medMin,   max: d.medMax   },
-                  { label: "Small",  color: "#7C3AED",          min: d.smallMin, max: d.smallMax },
+                try {
+                  dateLabel = format(parseISO(d.date), "d MMM yyyy");
+                } catch {
+                  /* noop */
+                }
+                const rows: {
+                  label: string;
+                  color: string;
+                  min: number | null;
+                  max: number | null;
+                }[] = [
+                  {
+                    label: "Large",
+                    color: "#1D4ED8",
+                    min: d.largeMin,
+                    max: d.largeMax,
+                  },
+                  {
+                    label: "Medium",
+                    color: "var(--brand-mid)",
+                    min: d.medMin,
+                    max: d.medMax,
+                  },
+                  {
+                    label: "Small",
+                    color: "#7C3AED",
+                    min: d.smallMin,
+                    max: d.smallMax,
+                  },
                 ];
                 return (
                   <div className="bg-[--text-primary] border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] bg-black text-xs min-w-[160px]">
                     <p className="data-num text-on-dark  text-[10px] pb-2 mb-2.5 border-b border-white/10">
                       {dateLabel}
                     </p>
-                    {rows.filter(r => r.max !== null).map(r => (
-                      <div key={r.label} className="flex items-center justify-between gap-6 mb-1.5 last:mb-0 text-on-dark ">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                          <span className="text-on-dark font-medium">{r.label}</span>
+                    {rows
+                      .filter((r) => r.max !== null)
+                      .map((r) => (
+                        <div
+                          key={r.label}
+                          className="flex items-center justify-between gap-6 mb-1.5 last:mb-0 text-on-dark "
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: r.color }}
+                            />
+                            <span className="text-on-dark font-medium">
+                              {r.label}
+                            </span>
+                          </div>
+                          <span className="data-num text-on-dark font-semibold">
+                            {r.min ?? "?"}–{r.max} ฿
+                          </span>
                         </div>
-                        <span className="data-num text-on-dark font-semibold">
-                          {r.min ?? "?"}–{r.max} ฿
-                        </span>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 );
               }}
