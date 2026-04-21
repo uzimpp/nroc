@@ -68,6 +68,7 @@ function useDragPan(dataLen: number, windowSize: number) {
   const [startIdx, setStartIdx] = useState(() =>
     Math.max(0, dataLen - windowSize),
   );
+  const [isDragging, setIsDragging] = useState(false);
   const drag = useRef({ active: false, lastX: 0, originStart: 0 });
 
   // keep startIdx in sync when dataLen changes
@@ -76,6 +77,7 @@ function useDragPan(dataLen: number, windowSize: number) {
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
       drag.current = { active: true, lastX: e.clientX, originStart: startIdx };
+      setIsDragging(true);
       e.preventDefault();
     },
     [startIdx],
@@ -98,6 +100,7 @@ function useDragPan(dataLen: number, windowSize: number) {
 
   const onMouseUp = useCallback(() => {
     drag.current.active = false;
+    setIsDragging(false);
   }, []);
 
   // touch support
@@ -108,6 +111,7 @@ function useDragPan(dataLen: number, windowSize: number) {
         lastX: e.touches[0].clientX,
         originStart: startIdx,
       };
+      setIsDragging(true);
     },
     [startIdx],
   );
@@ -131,11 +135,13 @@ function useDragPan(dataLen: number, windowSize: number) {
 
   const onTouchEnd = useCallback(() => {
     drag.current.active = false;
+    setIsDragging(false);
   }, []);
 
   return {
     startIdx,
     endIdx,
+    isDragging,
     setStartIdx,
     onMouseDown,
     onMouseMove,
@@ -245,7 +251,11 @@ function MetricChart({
         </div>
       ) : (
         <div
-          className="cursor-grab active:cursor-grabbing select-none"
+          className={`select-none rounded-[--radius-sm] transition-all duration-200 ${
+            pan.isDragging
+              ? "cursor-grabbing ring-1 ring-[--brand-mid]/25 bg-[--bg-elevated]/50"
+              : "cursor-grab hover:bg-[--bg-elevated]/30"
+          }`}
           onMouseDown={pan.onMouseDown}
           onMouseMove={pan.onMouseMove}
           onMouseUp={pan.onMouseUp}
@@ -282,15 +292,15 @@ function MetricChart({
               content={({ active, payload, label: xLabel }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
-                    <p className="text-white/50 text-[10px] pb-2 mb-2 border-b border-white/10">{labelFmt(xLabel)}</p>
+                  <div className="bg-[--text-primary] border border-[--text-secondary]/20 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                    <p className="text-[--text-on-dark]/50 text-[10px] pb-2 mb-2 border-b border-[--text-on-dark]/10">{labelFmt(xLabel)}</p>
                     {payload.map((p) => (
                       <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                          <span className="text-white/80">{p.name === String(secondKey) ? (secondLabel ?? p.name) : label}</span>
+                          <span className="text-[--text-on-dark]/80">{p.name === String(secondKey) ? (secondLabel ?? p.name) : label}</span>
                         </div>
-                        <span className="font-semibold text-white">{p.value !== null ? `${p.value}${unit}` : "—"}</span>
+                        <span className="font-semibold text-[--text-on-dark]">{p.value !== null ? `${p.value}${unit}` : "—"}</span>
                       </div>
                     ))}
                   </div>
@@ -350,8 +360,8 @@ function MetricChart({
         </div>
       )}
 
-      <p className="text-[10px] text-[--text-muted] text-center">
-        Drag chart to pan · Use brush handles to zoom
+      <p className={`text-[10px] text-center transition-colors duration-200 ${pan.isDragging ? "text-[--brand-muted]" : "text-[--text-muted]"}`}>
+        {pan.isDragging ? "Panning…" : "Drag to pan · brush handles to zoom"}
       </p>
     </div>
   );

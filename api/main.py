@@ -100,22 +100,30 @@ def get_market_prices(
     start_date: Optional[date] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[date] = Query(None, description="End date (YYYY-MM-DD)"),
     product_id: Optional[int] = Query(
-        None, description="Filter by generic product ID (e.g. 206 for medium corn)"
+        None, description="Filter by product ID (e.g. 206 for medium corn)"
+    ),
+    size: Optional[str] = Query(
+        None,
+        description="Filter by size grade: 'large', 'medium', or 'small'",
+        examples=["large"],
     ),
     db: pymysql.connections.Connection = Depends(get_db),
 ):
     """
     Returns daily min/max corn prices scraped from Talad Thai (ตลาดไท).
 
-    **Product IDs used in the dashboard:**
-    - `182` — Large grade corn
-    - `206` — Medium grade corn (default display)
-    - `216` — Small grade corn
+    Each record includes a `size` field that identifies the corn grade:
+    - `large` — Large grade corn
+    - `medium` — Medium grade corn
+    - `small` — Small grade corn
+
+    The dashboard uses the `size` field to filter and display prices
+    instead of relying on `product_id`.
 
     Dates are calendar dates only (`YYYY-MM-DD`). Pass `start_date` and `end_date`
     to narrow the range; omit both to retrieve the full price history.
     """
-    sql = "SELECT id, product_id, product_name, record_date, price_min, price_max, unit, fetched_at FROM market_prices WHERE 1=1"
+    sql = "SELECT id, product_id, product_name, size, record_date, price_min, price_max, unit, fetched_at FROM market_prices WHERE 1=1"
     params = []
 
     if start_date:
@@ -127,6 +135,9 @@ def get_market_prices(
     if product_id:
         sql += " AND product_id = %s"
         params.append(product_id)
+    if size:
+        sql += " AND size = %s"
+        params.append(size)
 
     sql += " ORDER BY record_date ASC"
 

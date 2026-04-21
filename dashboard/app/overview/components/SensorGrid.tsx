@@ -121,15 +121,15 @@ function MetricCard({
               content={({ active, payload, label: xLabel }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
-                    <p className="text-white/50 text-[10px] pb-2 mb-2 border-b border-white/10">{labelFmt(xLabel)}</p>
+                  <div className="bg-[--text-primary] border border-[--text-secondary]/20 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                    <p className="text-[--text-on-dark]/50 text-[10px] pb-2 mb-2 border-b border-[--text-on-dark]/10">{labelFmt(xLabel)}</p>
                     {payload.map((p) => (
                       <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                          <span className="text-white/80">{p.name === String(secondKey) ? (secondLabel ?? p.name) : label}</span>
+                          <span className="text-[--text-on-dark]/80">{p.name === String(secondKey) ? (secondLabel ?? p.name) : label}</span>
                         </div>
-                        <span className="font-semibold text-white">{p.value !== null ? `${p.value}${unit}` : "—"}</span>
+                        <span className="font-semibold text-[--text-on-dark]">{p.value !== null ? `${p.value}${unit}` : "—"}</span>
                       </div>
                     ))}
                   </div>

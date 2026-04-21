@@ -31,10 +31,10 @@ interface DayRow {
   largeRange: number | null;
 }
 
-const PRODUCTS: Record<number, "small" | "med" | "large"> = {
-  216: "small",
-  206: "med",
-  182: "large",
+const SIZE_KEYS: Record<string, "small" | "med" | "large"> = {
+  small: "small",
+  medium: "med",
+  large: "large",
 };
 const RANGES: PriceRange[] = ["30D", "60D", "90D"];
 const AXIS_STYLE = {
@@ -61,7 +61,7 @@ function buildRows(prices: MarketPrice[]): DayRow[] {
         largeRange: null,
       });
     const row = map.get(key)!;
-    const g = PRODUCTS[p.product_id];
+    const g = SIZE_KEYS[p.size ?? ""];
     if (!g) continue;
     if (p.price_min !== null)
       (row as unknown as Record<string, number | null>)[`${g}Min`] =

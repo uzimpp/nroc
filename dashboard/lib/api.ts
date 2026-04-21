@@ -76,6 +76,7 @@ export interface MarketPrice {
   id: number;
   product_id: number;
   product_name: string;
+  size: string | null;
   record_date: string;
   price_min: number | null;
   price_max: number | null;

@@ -136,7 +136,7 @@ Four `StatCard` components in a `grid-cols-2 lg:grid-cols-4` layout showing the 
 #### Market Prices
 
 - **Component**: `components/PriceChart.tsx`
-- **Data source**: `/api/market-prices` filtered to the last 30 days, product IDs 182 (large), 206 (medium), 216 (small)
+- **Data source**: `/api/market-prices` filtered to the last 30 days. The API returns a `size` field (`"large"`, `"medium"`, `"small"`), and the frontend filters by this field rather than `product_id`.
 - **Chart type**: `LineChart` with one line per grade
 
 #### Weather Forecast
@@ -194,7 +194,8 @@ Four `StatCard` components in a `grid-cols-2 lg:grid-cols-4` layout showing the 
 #### Price Chart — `PriceChart`
 
 - **Component**: `components/PriceChart.tsx`
-- Three lines: Large (product 182, blue `#1D4ED8`), Medium (product 206, `--brand-mid`), Small (product 216, purple `#7C3AED`)
+- Three lines: Large (`size: "large"`, blue `#1D4ED8`), Medium (`size: "medium"`, `--brand-mid`), Small (`size: "small"`, purple `#7C3AED`)
+- The market price API returns a `size` field that identifies the grade — the frontend uses this instead of checking `product_id` directly.
 - Range selector: 30D / 60D / 90D — triggers a new `/api/market-prices` fetch
 - Day hover in the price history table: GSAP tweens row `backgroundColor` to black with accent-colored text per column
 

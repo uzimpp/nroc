@@ -20,9 +20,9 @@ const RANGE_DAYS: Record<PriceRange, number> = { "30D": 30, "60D": 60, "90D": 90
 function isoDate(d: Date) { return format(d, "yyyy-MM-dd"); }
 
 const GRADES = [
-  { id: 182, label: "Large",  dot: "#1D4ED8" },
-  { id: 206, label: "Medium", dot: "var(--brand-mid)" },
-  { id: 216, label: "Small",  dot: "#7C3AED" },
+  { id: 182, label: "Large",  size: "large",  dot: "#1D4ED8" },
+  { id: 206, label: "Medium", size: "medium", dot: "var(--brand-mid)" },
+  { id: 216, label: "Small",  size: "small",  dot: "#7C3AED" },
 ];
 
 interface PriceStat {
@@ -32,7 +32,7 @@ interface PriceStat {
 
 function buildStats(prices: MarketPrice[]): PriceStat[] {
   return GRADES.map(g => {
-    const byGrade = prices.filter(p => p.product_id === g.id);
+    const byGrade = prices.filter(p => p.size === g.size);
     const sorted  = [...byGrade].sort((a, b) => b.record_date.localeCompare(a.record_date));
     const maxes   = byGrade.map(p => p.price_max).filter((v): v is number => v !== null);
     const mins    = byGrade.map(p => p.price_min).filter((v): v is number => v !== null);
@@ -115,11 +115,22 @@ export default function MarketPage() {
     gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
   }, { scope: page });
 
-  const stats     = buildStats(prices);
-  const recentMed = prices
-    .filter(p => p.product_id === 206)
-    .sort((a, b) => b.record_date.localeCompare(a.record_date))
-    .slice(0, 14);
+  const stats = buildStats(prices);
+
+  // Build per-date rows: { date, large, medium, small }
+  interface PriceRow { date: string; large: string | null; medium: string | null; small: string | null; }
+  const priceHistory: PriceRow[] = (() => {
+    const byDate = new Map<string, PriceRow>();
+    for (const p of prices) {
+      if (!byDate.has(p.record_date)) byDate.set(p.record_date, { date: p.record_date, large: null, medium: null, small: null });
+      const row = byDate.get(p.record_date)!;
+      const val = p.price_max !== null ? `฿${Number(p.price_max).toFixed(2)}` : null;
+      if (p.size === "large") row.large  = val;
+      if (p.size === "medium") row.medium = val;
+      if (p.size === "small") row.small  = val;
+    }
+    return Array.from(byDate.values()).sort((a, b) => b.date.localeCompare(a.date));
+  })();
 
   const marketExportConfig: ExportConfig = {
     title: "Export Market Prices",
@@ -191,6 +202,56 @@ export default function MarketPage() {
           the highest price; <strong className="text-[--text-primary]">small grade</strong> (product 216) the lowest.
         </p>
       </div>
+
+      {/* Price history table */}
+      {!loading && priceHistory.length > 0 && (
+        <Card className="animate-section p-6">
+          <p className="label-caps mb-5">
+            Daily Price History
+            <span className="ml-2 text-[--text-muted] font-normal normal-case">({range} · max price per grade)</span>
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-[--border] text-left">
+                  {["Date", "Large (฿/kg)", "Medium (฿/kg)", "Small (฿/kg)"].map(h => (
+                    <th key={h} className="pb-2.5 pr-6 label-caps !text-[9px] font-semibold whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {priceHistory.map(row => (
+                  <tr
+                    key={row.date}
+                    className="border-b border-[--border] last:border-0 cursor-default"
+                    onMouseEnter={(e) => {
+                      const cells = Array.from(e.currentTarget.querySelectorAll("td"));
+                      gsap.to(cells, { backgroundColor: "#1A1714", duration: 0.18, ease: "power2.out", overwrite: true });
+                      const hoverColors = ["rgba(240,237,230,0.45)", "#5B86E5", "#4A9B6F", "#A78BFA"];
+                      cells.forEach((cell, i) => {
+                        if (hoverColors[i]) gsap.to(cell, { color: hoverColors[i], duration: 0.18, ease: "power2.out", overwrite: "auto" });
+                      });
+                    }}
+                    onMouseLeave={(e) => {
+                      const cells = Array.from(e.currentTarget.querySelectorAll("td"));
+                      gsap.to(cells, { backgroundColor: "transparent", duration: 0.32, ease: "power2.inOut", overwrite: true });
+                      const restColors = ["#A49E98", "#6A6560", "#6A6560", "#6A6560"];
+                      cells.forEach((cell, i) => {
+                        if (restColors[i]) gsap.to(cell, { color: restColors[i], duration: 0.28, ease: "power2.inOut", overwrite: "auto" });
+                      });
+                    }}
+                  >
+                    <td className="py-2.5 pr-6 text-[--text-muted] whitespace-nowrap">{row.date}</td>
+                    <td className="py-2.5 pr-6 data-num text-[--text-secondary]">{row.large  ?? "—"}</td>
+                    <td className="py-2.5 pr-6 data-num text-[--text-secondary]">{row.medium ?? "—"}</td>
+                    <td className="py-2.5 pr-6 data-num text-[--text-secondary]">{row.small  ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {showExport && (
         <ExportCsvModal
