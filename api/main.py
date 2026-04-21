@@ -71,7 +71,8 @@ def get_db():
     try:
         yield conn
     finally:
-        conn.close()
+        conn.close()  # returns connection to pool (PooledDB), does not destroy it
+
 
 
 def _naive(dt: Optional[datetime]) -> Optional[datetime]:
@@ -123,7 +124,16 @@ def get_market_prices(
     Dates are calendar dates only (`YYYY-MM-DD`). Pass `start_date` and `end_date`
     to narrow the range; omit both to retrieve the full price history.
     """
-    sql = "SELECT id, product_id, product_name, size, record_date, price_min, price_max, unit, fetched_at FROM market_prices WHERE 1=1"
+    size_to_product = {"large": 182, "medium": 206, "small": 216}
+
+    sql = """SELECT id, product_id, product_name,
+    CASE product_id
+        WHEN 182 THEN 'large'
+        WHEN 206 THEN 'medium'
+        WHEN 216 THEN 'small'
+    END AS size,
+    record_date, price_min, price_max, unit, fetched_at
+FROM market_prices WHERE 1=1"""
     params = []
 
     if start_date:
@@ -135,9 +145,10 @@ def get_market_prices(
     if product_id:
         sql += " AND product_id = %s"
         params.append(product_id)
-    if size:
-        sql += " AND size = %s"
-        params.append(size)
+    elif size and size in size_to_product:
+        # Push size filter into SQL via the underlying product_id mapping
+        sql += " AND product_id = %s"
+        params.append(size_to_product[size])
 
     sql += " ORDER BY record_date ASC"
 

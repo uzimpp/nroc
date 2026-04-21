@@ -125,7 +125,7 @@ export default function SensorChart({
           ))}
         </div>
         <div className="flex rounded-[--radius-sm] border border-[--border] overflow-hidden">
-          {RANGES.map(r => (
+          {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => onRangeChange(r)}
@@ -144,33 +144,43 @@ export default function SensorChart({
             {tab === "temp" && (
               <>
                 <Thermometer size={14} className="text-red-500" />
-                <span className="text-red-600">{data[data.length - 1]?.temp}°C</span>
+                <span className="text-red-600">
+                  {data[data.length - 1]?.temp}°C
+                </span>
                 <span className="text-[--text-muted]">/</span>
                 <Thermometer size={14} className="text-orange-400 opacity-70" />
-                <span className="text-orange-500">{data[data.length - 1]?.temp_i2c}°C</span>
+                <span className="text-orange-500">
+                  {data[data.length - 1]?.temp_i2c}°C
+                </span>
               </>
             )}
             {tab === "humidity" && (
               <>
                 <Droplets size={14} className="text-blue-500" />
-                <span className="text-blue-600">{data[data.length - 1]?.humidity}%</span>
+                <span className="text-blue-600">
+                  {data[data.length - 1]?.humidity}%
+                </span>
               </>
             )}
             {tab === "moisture" && (
               <>
                 <Sprout size={14} className="text-emerald-500" />
-                <span className="text-emerald-600">{data[data.length - 1]?.moisture}%</span>
+                <span className="text-emerald-600">
+                  {data[data.length - 1]?.moisture}%
+                </span>
               </>
             )}
             {tab === "light" && (
               <>
                 <Sun size={14} className="text-amber-500" />
-                <span className="text-amber-600">{data[data.length - 1]?.light} lux</span>
+                <span className="text-amber-600">
+                  {data[data.length - 1]?.light} lux
+                </span>
               </>
             )}
           </div>
-)}
-        </div>
+        )}
+      </div>
 
       {data.length === 0 ? (
         <div className="h-64 flex items-center justify-center text-sm text-[--text-muted]">
@@ -208,12 +218,20 @@ export default function SensorChart({
                         {d?.time ? tickFmt(d.time) : label}
                       </p>
                       {payload.map((p) => (
-                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                        <div
+                          key={p.name}
+                          className="flex items-center justify-between gap-6 mb-1 last:mb-0"
+                        >
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: p.color }}
+                            />
                             <span className="text-white/80">{p.name}</span>
                           </div>
-                          <span className="font-semibold text-white">{p.value}°C</span>
+                          <span className="font-semibold text-white">
+                            {p.value}°C
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -224,7 +242,7 @@ export default function SensorChart({
                 wrapperStyle={AXIS_STYLE}
                 formatter={(value) => {
                   const icons: Record<string, React.ReactNode> = {
-                    "Temperature": (
+                    Temperature: (
                       <>
                         <Thermometer size={12} className="inline mr-1" />
                         Temperature
@@ -296,12 +314,19 @@ export default function SensorChart({
                         {d?.time ? tickFmt(d.time) : label}
                       </p>
                       {payload.map((p) => (
-                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                        <div
+                          key={p.name}
+                          className="flex items-center justify-between gap-6 mb-1 last:mb-0"
+                        >
                           <div className="flex items-center gap-2">
                             <Droplets size={12} className="text-blue-500" />
-                            <span className="text-white/80">{p.name === "Humidity" ? "Air Humidity" : p.name}</span>
+                            <span className="text-white/80">
+                              {p.name === "Humidity" ? "Air Humidity" : p.name}
+                            </span>
                           </div>
-                          <span className="font-semibold text-white">{p.value}%</span>
+                          <span className="font-semibold text-white">
+                            {p.value}%
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -371,12 +396,21 @@ export default function SensorChart({
                         {d?.time ? tickFmt(d.time) : label}
                       </p>
                       {payload.map((p) => (
-                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                        <div
+                          key={p.name}
+                          className="flex items-center justify-between gap-6 mb-1 last:mb-0"
+                        >
                           <div className="flex items-center gap-2">
                             <Sprout size={12} className="text-emerald-500" />
-                            <span className="text-white/80">{p.name === "Soil Moisture" ? "Soil Moisture" : p.name}</span>
+                            <span className="text-white/80">
+                              {p.name === "Soil Moisture"
+                                ? "Soil Moisture"
+                                : p.name}
+                            </span>
                           </div>
-                          <span className="font-semibold text-white">{p.value}%</span>
+                          <span className="font-semibold text-white">
+                            {p.value}%
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -451,12 +485,19 @@ export default function SensorChart({
                         {d?.time ? tickFmt(d.time) : label}
                       </p>
                       {payload.map((p) => (
-                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                        <div
+                          key={p.name}
+                          className="flex items-center justify-between gap-6 mb-1 last:mb-0"
+                        >
                           <div className="flex items-center gap-2">
                             <Sun size={12} className="text-amber-500" />
-                            <span className="text-white/80">{p.name === "Light" ? "Light Intensity" : p.name}</span>
+                            <span className="text-white/80">
+                              {p.name === "Light" ? "Light Intensity" : p.name}
+                            </span>
                           </div>
-                          <span className="font-semibold text-white">{p.value} lux</span>
+                          <span className="font-semibold text-white">
+                            {p.value} lux
+                          </span>
                         </div>
                       ))}
                     </div>

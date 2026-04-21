@@ -4,3 +4,4 @@ pymysql
 cryptography
 fastapi
 uvicorn
+dbutils

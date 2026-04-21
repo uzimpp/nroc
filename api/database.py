@@ -2,9 +2,10 @@ import os
 from pathlib import Path
 
 import pymysql
+import pymysql.cursors
+from dbutils.pooled_db import PooledDB
 from dotenv import load_dotenv
 
-# Load .env from project root
 ROOT = Path(__file__).parent.parent
 load_dotenv(ROOT / ".env")
 
@@ -18,7 +19,20 @@ DB_CONFIG = {
     "cursorclass": pymysql.cursors.DictCursor,
 }
 
+# PooledDB is thread-safe: each thread gets its own dedicated connection
+# from the pool and returns it when done. mincached=2 keeps 2 connections
+# alive at startup; maxcached=10 is the upper idle limit.
+_pool: PooledDB = PooledDB(
+    creator=pymysql,
+    mincached=2,
+    maxcached=3,
+    maxconnections=4,
+    blocking=True,
+    ping=1,          # ping before returning a connection to check it's alive
+    **DB_CONFIG,
+)
 
-def get_db_connection():
-    """Returns a new PyMySQL DictCursor connection."""
-    return pymysql.connect(**DB_CONFIG)
+
+def get_db_connection() -> pymysql.connections.Connection:
+    """Returns a thread-local connection from the pool."""
+    return _pool.connection()

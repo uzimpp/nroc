@@ -58,42 +58,55 @@ export default function OverviewPage() {
     try {
       const now = new Date();
 
-      // Get growth logs + GDD summary first — planting date needed for sensor range
-      const [logsResult, gddResult] = await Promise.allSettled([
-        fetchGrowthLogs(fid),
-        fetchGdd(fid),
-      ]);
+      // Sequential fetching to prevent overwhelming the DB's 5 concurrent connection limit
+      // 1. Get growth logs + GDD summary
+      let growthLogs: GrowthLog[] = [];
+      try {
+        growthLogs = await fetchGrowthLogs(fid);
+        setLogs(growthLogs);
+      } catch (e) {
+        console.error("Growth logs error:", e);
+      }
 
-      const growthLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
-      setLogs(growthLogs);
-      if (gddResult.status === "fulfilled") setGddData(gddResult.value);
+      let gddSummaries = null;
+      try {
+        gddSummaries = await fetchGdd(fid);
+        setGddData(gddSummaries);
+      } catch (e) {
+        console.error("GDD error:", e);
+      }
 
-      // Determine planting date: prefer backend result, fall back to log scan
-      const plantingDateStr = gddResult.status === "fulfilled"
-        ? gddResult.value.planting_date
-        : null;
+      // Determine planting date
+      const plantingDateStr = gddSummaries ? gddSummaries.planting_date : null;
       const plantingLog = [...growthLogs]
         .sort((a, b) => a.created_at.localeCompare(b.created_at))
-        .find(l => l.growth_progress_in_gdd === 0);
+        .find((l) => l.growth_progress_in_gdd === 0);
       const plantingDate = plantingDateStr
         ? new Date(plantingDateStr)
         : plantingLog
-          ? new Date(plantingLog.created_at)
-          : subDays(now, 90);
+        ? new Date(plantingLog.created_at)
+        : subDays(now, 90);
 
-      const results = await Promise.allSettled([
-        fetchLatestSensor(fid),
-        fetchSensors(localIso(plantingDate), localIso(addDays(now, 1)), fid),
-        fetchWeatherDaily(isoDate(now), isoDate(addDays(now, 7))),
-        fetchMarketPrices(isoDate(subDays(now, 32)), isoDate(now)),
-      ]);
+      // 2. Fetch sensor and weather data sequentially
+      try {
+        const latestResult = await fetchLatestSensor(fid);
+        setLatest(latestResult[0] ?? null);
+      } catch (e) { console.error("Latest sensor error:", e); }
 
-      const [latestResult, sensorResult, wxResult, mktResult] = results;
+      try {
+        const sensorResult = await fetchSensors(localIso(plantingDate), localIso(addDays(now, 1)), fid);
+        setReadings(sensorResult);
+      } catch (e) { console.error("Sensors error:", e); }
 
-      if (latestResult.status === "fulfilled") setLatest(latestResult.value[0] ?? null);
-      if (sensorResult.status === "fulfilled") setReadings(sensorResult.value);
-      if (wxResult.status === "fulfilled") setWeather(wxResult.value);
-      if (mktResult.status === "fulfilled") setPrices(mktResult.value);
+      try {
+        const wxResult = await fetchWeatherDaily(isoDate(now), isoDate(addDays(now, 7)));
+        setWeather(wxResult);
+      } catch (e) { console.error("Weather error:", e); }
+
+      try {
+        const mktResult = await fetchMarketPrices(isoDate(subDays(now, 32)), isoDate(now));
+        setPrices(mktResult);
+      } catch (e) { console.error("Market error:", e); }
 
       setLastUpdate(new Date());
     } catch (e) {
@@ -111,15 +124,6 @@ export default function OverviewPage() {
     gsap.from(".page-title-label", { y: 16, opacity: 0, duration: 0.6, ease: "power2.out" });
     gsap.from(".page-title-heading", { y: 50, opacity: 0, duration: 0.9, ease: "power3.out", delay: 0.08 });
     gsap.from(".page-title-actions", { y: 16, opacity: 0, duration: 0.6, ease: "power2.out", delay: 0.25 });
-
-    gsap.from(".hero-strip", {
-      y: 40, opacity: 0, duration: 1.0,
-      ease: "power3.out", delay: 0.3,
-    });
-    gsap.from(".stat-card", {
-      y: 28, opacity: 0, stagger: 0.07, duration: 0.65,
-      ease: "power2.out", delay: 0.55,
-    });
 
     gsap.set(".scroll-reveal", { opacity: 0, y: 44 });
     gsap.set(".section-heading", { opacity: 0, x: -20 });
@@ -140,6 +144,15 @@ export default function OverviewPage() {
 
     gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
   }, { scope: page });
+
+  // Animate .stat-card only after data has loaded (elements are in DOM)
+  useEffect(() => {
+    if (loading) return;
+    gsap.from(".stat-card", {
+      y: 28, opacity: 0, stagger: 0.07, duration: 0.65, ease: "power2.out", delay: 0.1,
+    });
+    gsap.delayedCall(0.15, () => ScrollTrigger.refresh());
+  }, [loading]);
 
   // Derived values
   const temp     = latest?.temp_i2c ?? latest?.temperature ?? null;
