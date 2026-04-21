@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { Ruler } from "lucide-react";
 import type { GrowthLog } from "@/lib/api";
-import { CORN_STAGES } from "./GrowthLogForm";
+import { CORN_STAGES } from "@/lib/stages";
 
 gsap.registerPlugin(useGSAP);
 
@@ -56,20 +56,20 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
   const stage = gddToStage(d.gdd);
   const Icon  = stage.icon;
   return (
-    <div className="bg-[--bg-surface] border border-[--border] rounded-[--radius-md] px-3 py-2.5 shadow-[--shadow-md] text-xs space-y-1.5 max-w-[220px]">
+    <div className="bg-black border border-white/10 rounded-[--radius-md] px-3 py-2.5 shadow-[--shadow-lg] text-xs space-y-1.5 max-w-[220px]">
       <div className="flex items-center gap-1.5">
-        <Icon size={12} className="text-[--brand-mid] shrink-0" />
-        <p className="font-semibold text-[--text-primary]">{stage.label} — {stage.desc}</p>
+        <Icon size={12} className="text-brand-light shrink-0" />
+        <p className="font-semibold text-white">{stage.label} — {stage.desc}</p>
       </div>
-      <p className="data-num text-[--brand-mid]">{d.gdd} GDD</p>
-      <p className="text-[--text-muted]">{d.dateLabel}</p>
+      <p className="data-num text-surface">{d.gdd} GDD</p>
+      <p className="text-white/50">{d.dateLabel}</p>
       {d.height && (
-        <p className="text-[--text-secondary] flex items-center gap-1">
+        <p className="text-white/70 flex items-center gap-1">
           <Ruler size={10} />{d.height} cm
         </p>
       )}
-      {d.ears  && <p className="text-[--text-secondary]">{d.ears} ears</p>}
-      {d.notes && <p className="italic text-[--text-muted]">{d.notes}</p>}
+      {d.ears  && <p className="text-white/70">{d.ears} ears</p>}
+      {d.notes && <p className="italic text-white/50">{d.notes}</p>}
     </div>
   );
 }
@@ -91,7 +91,7 @@ export default function GrowthTimeline({ logs }: { logs: GrowthLog[] }) {
 
   const points: ScatterPoint[] = sorted.map(log => ({
     dateMs:    new Date(log.created_at).getTime(),
-    gdd:       parseFloat(log.growth_progress_in_gdd) || 0,
+    gdd:       log.growth_progress_in_gdd || 0,
     dateLabel: format(new Date(log.created_at), "d MMM yyyy"),
     height:    log.height,
     ears:      log.n_ears,
@@ -212,7 +212,7 @@ export default function GrowthTimeline({ logs }: { logs: GrowthLog[] }) {
             <div className="flex flex-col gap-3">
               {[...sorted].reverse().map((log, i) => {
                 const isLatest  = i === 0;
-                const gdd       = parseFloat(log.growth_progress_in_gdd) || 0;
+                const gdd       = log.growth_progress_in_gdd || 0;
                 const stage     = gddToStage(gdd);
                 const StageIcon = stage.icon;
                 const isRepro   = stage.group === "reproductive";

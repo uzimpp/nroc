@@ -27,7 +27,7 @@ function downsample(readings: SensorReading[]): HourRow[] {
   for (const r of readings) {
     const d = parseISO(r.created_at);
     d.setMinutes(0, 0, 0);
-    const key = d.toISOString();
+    const key = format(d, "yyyy-MM-dd'T'HH:00:00");
     if (!map.has(key)) map.set(key, { t: [], i: [], h: [], m: [], l: [] });
     const b = map.get(key)!;
     if (r.temperature !== null) b.t.push(r.temperature);
@@ -118,10 +118,23 @@ function MetricCard({
             />
             <Tooltip
               labelFormatter={labelFmt}
-              formatter={(v, name) => [
-                v !== null ? `${v}${unit}` : "—",
-                name === String(secondKey) ? (secondLabel ?? name) : label,
-              ]}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                    <p className="text-white/50 text-[10px] pb-2 mb-2 border-b border-white/10">{label}</p>
+                    {payload.map((p) => (
+                      <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                          <span className="text-white/80">{p.name === String(secondKey) ? (secondLabel ?? p.name) : label}</span>
+                        </div>
+                        <span className="font-semibold text-white">{p.value !== null ? `${p.value}${unit}` : "—"}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }}
             />
             <Brush
               dataKey="time"
@@ -201,13 +214,13 @@ export default function SensorGrid({
           <MetricCard
             data={data}
             label="Temperature"
-            dataKey="temp"
+            dataKey="temp_i2c"
             unit="°C"
             color="#E05252"
             currentValue={temp}
-            secondKey="temp_i2c"
+            secondKey="temp"
             secondColor="#F0964A"
-            secondLabel="I2C Temp"
+            secondLabel="DHT Temp"
           />
           <MetricCard
             data={data}

@@ -8,11 +8,11 @@ import { useGSAP } from "@gsap/react";
 import { RefreshCw, Thermometer, Droplets, Sun, ArrowUpRight } from "lucide-react";
 import { Sprout } from "lucide-react";
 import {
-  fetchLatestSensor, fetchSensors, fetchGrowthLogs,
-  fetchWeatherDaily, fetchMarketPrices,
-  type SensorReading, type GrowthLog, type WeatherDaily, type MarketPrice,
+  fetchFarms, fetchLatestSensor, fetchSensors, fetchGrowthLogs,
+  fetchWeatherDaily, fetchMarketPrices, fetchGdd,
+  type SensorReading, type GrowthLog, type WeatherDaily, type MarketPrice, type GddSummary,
 } from "@/lib/api";
-import { CORN_STAGES } from "@/components/GrowthLogForm";
+import { CORN_STAGES } from "@/lib/stages";
 import StatCard from "@/components/StatCard";
 import WeatherForecast from "@/components/WeatherForecast";
 import PriceChart from "@/components/PriceChart";
@@ -23,66 +23,67 @@ import PriceCards from "./components/PriceCards";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const FARM_ID   = "1";
-const R3_GDD    = 1875; // Sweet corn harvest target (Milk stage)
-const TOTAL_GDD = 2700; // Full maturity (R6 Black Layer)
+function isoDate(d: Date) { return format(d, "yyyy-MM-dd"); }
 
-function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
-
-// ── Cumulative GDD from sensor data ─────────────────────────────────────────
-function calcCumulativeGdd(readings: SensorReading[], plantingIso: string): number {
-  const byDay = new Map<string, number[]>();
-  for (const r of readings) {
-    const d = r.created_at.slice(0, 10);
-    if (d < plantingIso) continue;
-    const temp = r.temp_i2c ?? r.temperature;
-    if (temp !== null) {
-      if (!byDay.has(d)) byDay.set(d, []);
-      byDay.get(d)!.push(temp);
-    }
-  }
-  let cum = 0;
-  for (const temps of byDay.values()) {
-    const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
-    cum += Math.max(0, avg - 10);
-  }
-  return +cum.toFixed(1);
-}
+/** Format in LOCAL time without timezone suffix so Bangkok-stored DB timestamps compare correctly. */
+function localIso(d: Date) { return format(d, "yyyy-MM-dd'T'HH:mm:ss"); }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function OverviewPage() {
+  const [farmId, setFarmId]     = useState<string | null>(null);
   const [latest, setLatest]     = useState<SensorReading | null>(null);
   const [readings, setReadings] = useState<SensorReading[]>([]);
   const [logs, setLogs]         = useState<GrowthLog[]>([]);
   const [weather, setWeather]   = useState<WeatherDaily[]>([]);
   const [prices, setPrices]     = useState<MarketPrice[]>([]);
+  const [gddData, setGddData]   = useState<GddSummary | null>(null);
   const [loading, setLoading]   = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [error, setError]       = useState("");
 
   const page = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async () => {
+  // Fetch farm list on mount and pick the first farm
+  useEffect(() => {
+    fetchFarms()
+      .then(farms => {
+        if (farms.length > 0) setFarmId(farms[0].id);
+        else setError("No farms found.");
+      })
+      .catch(() => setError("Failed to load farm list."));
+  }, []);
+
+  const load = useCallback(async (fid: string) => {
     setError("");
     try {
       const now = new Date();
 
-      // Get growth logs first — we need the planting date for sensor range
-      const growthLogsResult = await Promise.allSettled([fetchGrowthLogs(FARM_ID)]);
-      const growthLogs = growthLogsResult[0].status === "fulfilled" ? growthLogsResult[0].value : [];
+      // Get growth logs + GDD summary first — planting date needed for sensor range
+      const [logsResult, gddResult] = await Promise.allSettled([
+        fetchGrowthLogs(fid),
+        fetchGdd(fid),
+      ]);
+
+      const growthLogs = logsResult.status === "fulfilled" ? logsResult.value : [];
       setLogs(growthLogs);
-      
+      if (gddResult.status === "fulfilled") setGddData(gddResult.value);
+
+      // Determine planting date: prefer backend result, fall back to log scan
+      const plantingDateStr = gddResult.status === "fulfilled"
+        ? gddResult.value.planting_date
+        : null;
       const plantingLog = [...growthLogs]
         .sort((a, b) => a.created_at.localeCompare(b.created_at))
-        .find(l => parseFloat(l.growth_progress_in_gdd) === 0);
-      const plantingDate = plantingLog
-        ? new Date(plantingLog.created_at)
-        : subDays(now, 90);
+        .find(l => l.growth_progress_in_gdd === 0);
+      const plantingDate = plantingDateStr
+        ? new Date(plantingDateStr)
+        : plantingLog
+          ? new Date(plantingLog.created_at)
+          : subDays(now, 90);
 
-      // Fetch remaining data in parallel, but handle each separately
       const results = await Promise.allSettled([
-        fetchLatestSensor(FARM_ID),
-        fetchSensors(plantingDate.toISOString(), now.toISOString(), FARM_ID),
+        fetchLatestSensor(fid),
+        fetchSensors(localIso(plantingDate), localIso(addDays(now, 1)), fid),
         fetchWeatherDaily(isoDate(now), isoDate(addDays(now, 7))),
         fetchMarketPrices(isoDate(subDays(now, 32)), isoDate(now)),
       ]);
@@ -102,7 +103,9 @@ export default function OverviewPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (farmId) load(farmId);
+  }, [farmId, load]);
 
   useGSAP(() => {
     gsap.from(".page-title-label", { y: 16, opacity: 0, duration: 0.6, ease: "power2.out" });
@@ -118,25 +121,24 @@ export default function OverviewPage() {
       ease: "power2.out", delay: 0.55,
     });
 
+    gsap.set(".scroll-reveal", { opacity: 0, y: 44 });
+    gsap.set(".section-heading", { opacity: 0, x: -20 });
+
     ScrollTrigger.batch(".scroll-reveal", {
       onEnter: (els) =>
-        gsap.from(els, {
-          y: 44, opacity: 0, stagger: 0.1, duration: 0.8,
-          ease: "power3.out",
-        }),
+        gsap.to(els, { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: "power3.out" }),
       once: true,
       start: "top 88%",
     });
 
     ScrollTrigger.batch(".section-heading", {
       onEnter: (els) =>
-        gsap.from(els, {
-          x: -20, opacity: 0, stagger: 0.08, duration: 0.75,
-          ease: "power2.out",
-        }),
+        gsap.to(els, { opacity: 1, x: 0, stagger: 0.08, duration: 0.75, ease: "power2.out" }),
       once: true,
       start: "top 88%",
     });
+
+    gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
   }, { scope: page });
 
   // Derived values
@@ -145,12 +147,10 @@ export default function OverviewPage() {
 
   const plantingLog = [...logs]
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
-    .find(l => parseFloat(l.growth_progress_in_gdd) === 0);
-  const plantingIso = plantingLog
-    ? plantingLog.created_at.slice(0, 10)
-    : isoDate(subDays(new Date(), 90));
-
-  const sensorGdd = calcCumulativeGdd(readings, plantingIso);
+    .find(l => l.growth_progress_in_gdd === 0);
+  const plantingIso = gddData?.planting_date
+    ?? plantingLog?.created_at.slice(0, 10)
+    ?? isoDate(subDays(new Date(), 90));
 
   const medPrice = prices
     .filter(p => p.product_id === 206)
@@ -183,7 +183,7 @@ export default function OverviewPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pt-2">
         <div>
           <p className="page-title-label label-caps text-[--text-muted] mb-3 tracking-[0.18em]">
-            {FARM_ID} &ensp;&middot;&ensp; Farm Overview
+            {farmId ?? "—"} &ensp;&middot;&ensp; Farm Overview
           </p>
           <h1
             className="page-title-heading display-italic text-[--text-primary] leading-[0.90] tracking-tighter"
@@ -199,7 +199,7 @@ export default function OverviewPage() {
             </span>
           )}
           <button
-            onClick={() => { setLoading(true); load(); }}
+            onClick={() => { if (farmId) { setLoading(true); load(farmId); } }}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 rounded-[--radius-sm] border border-[--border] text-[13px] font-medium text-[--text-secondary] hover:bg-[--bg-elevated] disabled:opacity-50 transition-all duration-150"
           >

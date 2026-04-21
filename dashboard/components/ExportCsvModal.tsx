@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
 import { Download, Calendar, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import { downloadCSV, todayStr } from "@/lib/csv";
 import Button from "./ui/Button";
@@ -92,12 +93,8 @@ export default function ExportCsvModal({ config, onClose }: Props) {
       if (mode === "all") {
         rows = await config.fetchAll(config.preloaded);
       } else {
-        const startIso = startDate
-          ? new Date(startDate + "T00:00:00").toISOString()
-          : new Date(0).toISOString();
-        const endIso = endDate
-          ? new Date(endDate + "T23:59:59").toISOString()
-          : new Date().toISOString();
+        const startIso = startDate ? startDate + "T00:00:00" : "2000-01-01T00:00:00";
+        const endIso   = endDate   ? endDate   + "T23:59:59" : format(new Date(), "yyyy-MM-dd'T'HH:mm:ss");
         rows = await config.fetchRange(startIso, endIso);
       }
 
@@ -127,7 +124,7 @@ export default function ExportCsvModal({ config, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-[--radius-xl] overflow-hidden shadow-[--shadow-lg] bg-white">
+      <div className="w-full max-w-md rounded-[--radius-xl] overflow-hidden shadow-[--shadow-lg] bg-surface">
 
         <div className="bg-[--brand] px-6 py-5 flex items-start justify-between">
           <div>

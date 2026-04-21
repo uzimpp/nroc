@@ -5,10 +5,10 @@ import { format, subDays, addDays } from "date-fns";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import { RefreshCw, Download, Thermometer, Droplets, Sprout, Sun } from "lucide-react";
+import { RefreshCw, Download, Thermometer, Droplets, Sprout, Sun, CloudRain } from "lucide-react";
 import {
-  fetchSensors, fetchWeatherDaily, fetchWeatherHourly,
-  type SensorReading, type WeatherDaily,
+  fetchSensors, fetchWeatherDaily, fetchWeatherHourly, fetchRainAccumulation,
+  type SensorReading, type WeatherDaily, type RainAccumulation,
 } from "@/lib/api";
 import { downloadCSV } from "@/lib/csv";
 import SensorChartsGrid from "@/components/SensorChartsGrid";
@@ -24,7 +24,8 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const RANGE_DAYS: Record<Range, number> = { "7D": 7, "14D": 14, "30D": 30 };
 
-function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
+function isoDate(d: Date) { return format(d, "yyyy-MM-dd"); }
+function localIso(d: Date) { return format(d, "yyyy-MM-dd'T'HH:mm:ss"); }
 
 interface PillProps { label: string; value: string; unit: string; color: string; icon?: React.ReactNode; }
 function SummaryPill({ label, value, unit, color, icon }: PillProps) {
@@ -43,6 +44,7 @@ function SummaryPill({ label, value, unit, color, icon }: PillProps) {
 export default function MonitorPage() {
   const [readings, setReadings]     = useState<SensorReading[]>([]);
   const [weather, setWeather]       = useState<WeatherDaily[]>([]);
+  const [rain, setRain]             = useState<RainAccumulation | null>(null);
   const [range, setRange]           = useState<Range>("7D");
 const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
@@ -59,13 +61,15 @@ const [loading, setLoading]       = useState(true);
     const future = addDays(now, 7);
     try {
       const results = await Promise.allSettled([
-        fetchSensors(start.toISOString(), now.toISOString()),
+        fetchSensors(localIso(start), localIso(addDays(now, 1))),
         fetchWeatherDaily(isoDate(now), isoDate(future)),
+        fetchRainAccumulation(),
       ]);
 
-      const [sensResult, wxResult] = results;
+      const [sensResult, wxResult, rainResult] = results;
       if (sensResult.status === "fulfilled") setReadings(sensResult.value);
       if (wxResult.status === "fulfilled") setWeather(wxResult.value);
+      if (rainResult.status === "fulfilled") setRain(rainResult.value);
       setLastUpdate(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data.");
@@ -80,10 +84,15 @@ const [loading, setLoading]       = useState(true);
 
   useGSAP(() => {
     gsap.from(".summary-pill", { scale: 0.85, opacity: 0, stagger: 0.07, duration: 0.5, ease: "back.out(1.4)", delay: 0.2 });
+
+    gsap.set(".animate-section", { opacity: 0, y: 40 });
     ScrollTrigger.batch(".animate-section", {
-      onEnter: els => gsap.from(els, { y: 40, opacity: 0, stagger: 0.12, duration: 0.7, ease: "power2.out" }),
+      onEnter: els => gsap.to(els, { opacity: 1, y: 0, stagger: 0.12, duration: 0.7, ease: "power2.out" }),
+      once: true,
       start: "top 88%",
     });
+
+    gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
   }, { scope: page, dependencies: [loading] });
 
   function periodAvg(field: keyof SensorReading) {
@@ -91,7 +100,7 @@ const [loading, setLoading]       = useState(true);
     if (!vals.length) return null;
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   }
-  const avgTemp  = periodAvg("temperature");
+  const avgTemp  = periodAvg("temp_i2c") ?? periodAvg("temperature");
   const avgHum   = periodAvg("humidity");
   const avgMoist = periodAvg("moisture");
   const avgLight = periodAvg("light");
@@ -150,7 +159,43 @@ const [loading, setLoading]       = useState(true);
           <SummaryPill label="Avg Soil"     value={avgMoist !== null ? avgMoist.toFixed(1) : "—"} unit="%"    color="bg-[--brand-light] text-[--brand]" icon={<Sprout    size={14} className="mb-0.5" />} />
           <SummaryPill label="Avg Light"    value={avgLight !== null ? Math.round(avgLight).toString() : "—"} unit="lux" color="bg-amber-50 text-amber-700" icon={<Sun      size={14} className="mb-0.5" />} />
           <SummaryPill label="Readings"     value={readings.length.toString()} unit="pts"  color="bg-[--bg-elevated] text-[--text-secondary]" />
+          {rain && (
+            <SummaryPill label="Weekly Rain" value={rain.total_mm.toFixed(1)} unit="mm" color="bg-blue-50 text-blue-700" icon={<CloudRain size={14} className="mb-0.5" />} />
+          )}
         </div>
+      )}
+
+      {/* Weekly rain sparkline */}
+      {!loading && rain && rain.days.length > 0 && (
+        <Card className="animate-section p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <CloudRain size={14} className="text-blue-500" />
+              <p className="label-caps">Weekly Rain Forecast</p>
+            </div>
+            <span className="data-num text-sm font-semibold text-blue-600">{rain.total_mm.toFixed(1)} mm total</span>
+          </div>
+          <div className="flex items-end gap-1.5 h-12">
+            {rain.days.map((d, i) => {
+              const maxMm = Math.max(...rain.days.map(x => x.total_mm), 1);
+              const pct   = (d.total_mm / maxMm) * 100;
+              const label = new Date(d.date).toLocaleDateString("en", { weekday: "short" });
+              return (
+                <div key={i} className="flex flex-col items-center gap-1 flex-1">
+                  <div className="w-full flex items-end" style={{ height: "36px" }}>
+                    <div
+                      className="w-full rounded-t-sm bg-blue-400/60 hover:bg-blue-500/80 transition-colors"
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                      title={`${d.date}: ${d.total_mm.toFixed(1)} mm`}
+                    />
+                  </div>
+                  <span className="label-caps !text-[8px] text-[--text-muted] whitespace-nowrap">{label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-[--text-muted] mt-2">Forecast data from Thai Met. Dept. · ISO week {rain.week_start} – {rain.week_end}</p>
+        </Card>
       )}
 
       {/* Range selector */}
@@ -221,7 +266,7 @@ const [loading, setLoading]       = useState(true);
               <tbody>
                 {readings.slice(0, 10).map(r => (
                   <tr
-                    key={r.id}
+                    key={r.created_at}
                     className="border-b border-[--border] last:border-0 cursor-default"
                     onMouseEnter={(e) => {
                       const cells = Array.from(e.currentTarget.querySelectorAll("td"));
@@ -279,8 +324,8 @@ function WeatherExportModal({ weather, onClose }: { weather: WeatherDaily[]; onC
   async function handleExport() {
     setLoading(true);
     try {
-      const startDate = weather[0]?.forecast_date || new Date().toISOString().slice(0, 10);
-      const endDate = weather[weather.length - 1]?.forecast_date || new Date().toISOString().slice(0, 10);
+      const startDate = weather[0]?.forecast_date || format(new Date(), "yyyy-MM-dd");
+      const endDate = weather[weather.length - 1]?.forecast_date || format(new Date(), "yyyy-MM-dd");
       const data = granularity === "hourly" 
         ? await fetchWeatherHourly(startDate, endDate)
         : weather;
@@ -293,7 +338,7 @@ function WeatherExportModal({ weather, onClose }: { weather: WeatherDaily[]; onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-[--bg-surface] border border-[--border] rounded-[--radius-lg] p-6 w-full max-w-sm shadow-[--shadow-lg]" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface border border-[--border] rounded-[--radius-lg] p-6 w-full max-w-sm shadow-[--shadow-lg]" onClick={e => e.stopPropagation()}>
         <p className="label-caps mb-4">Export Weather Data</p>
         
         <div className="mb-5">

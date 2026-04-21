@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Wheat } from "lucide-react";
+import { CORN_STAGES } from "@/lib/stages";
 
 const LINKS = [
   { href: "/overview", label: "Overview"      },
@@ -10,14 +11,10 @@ const LINKS = [
   { href: "/market",   label: "Market"        },
 ];
 
-const GDD_STAGES = [
-  { id: "VE",  gdd: 110,  short: "Emergence"   },
-  { id: "V6",  gdd: 520,  short: "6-leaf"       },
-  { id: "VT",  gdd: 1350, short: "Tasseling"    },
-  { id: "R1",  gdd: 1500, short: "Silking"      },
-  { id: "R3",  gdd: 1875, short: "Milk / Harvest" },
-  { id: "R6",  gdd: 2700, short: "Maturity"     },
-];
+const KEY_STAGE_IDS = ["VE", "V6", "VT", "R1", "R3", "R6"];
+const GDD_STAGES = CORN_STAGES
+  .filter(s => KEY_STAGE_IDS.includes(s.id))
+  .map(s => ({ id: s.id, gdd: s.gdd, short: s.desc.replace(" (Maturity)", "").replace("Milk", "Milk / Harvest") }));
 
 export default function Footer() {
   return (

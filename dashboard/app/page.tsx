@@ -21,14 +21,14 @@ const FEATURES = [
     title: "Sensor\nIntelligence",
     body: "Real-time IoT telemetry from FARM_001 — temperature, humidity, soil moisture and light intensity streamed continuously from the field.",
     tag: "IoT · MQTT · FARM_001",
-    img: "https://picsum.photos/seed/soil-farm/900/700",
+    img: "/bead-sensor parts.webp",
   },
   {
     num: "02",
     title: "Weather\nForecasting",
     body: "7-day forecasts from the Thai Meteorological Department integrated into GDD calculations for precise harvest window planning.",
     tag: "TMD · 7-day · GDD",
-    img: "https://picsum.photos/seed/overcast-sky/900/700",
+    img: "/Stormclouds.jpg",
   },
 ];
 
@@ -102,14 +102,14 @@ export default function LandingPage() {
         ease: "power2.out",
         delay: 0.6,
       });
-      gsap.from(".hero-cta", {
-        y: 18,
-        opacity: 0,
-        stagger: 0.1,
-        duration: 0.65,
-        ease: "power2.out",
-        delay: 0.75,
-      });
+      // gsap.from(".hero-cta", {
+      //   y: 18,
+      //   opacity: 0,
+      //   stagger: 0.1,
+      //   duration: 0.65,
+      //   ease: "power2.out",
+      //   delay: 0.75,
+      // });
       gsap.from(".hero-img-wrap", {
         scale: 1.07,
         opacity: 0,
@@ -137,32 +137,23 @@ export default function LandingPage() {
       });
 
       // Feature panel entrance
+      gsap.set(".feature-panel", { opacity: 0, y: 70 });
+      gsap.set(".nav-card", { opacity: 0, y: 55 });
+
       ScrollTrigger.batch(".feature-panel", {
-        onEnter: (els) =>
-          gsap.from(els, {
-            y: 70,
-            opacity: 0,
-            stagger: 0.18,
-            duration: 1.0,
-            ease: "power3.out",
-          }),
+        onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.18, duration: 1.0, ease: "power3.out" }),
         once: true,
         start: "top 84%",
       });
 
       // Nav cards entrance
       ScrollTrigger.batch(".nav-card", {
-        onEnter: (els) =>
-          gsap.from(els, {
-            y: 55,
-            opacity: 0,
-            stagger: 0.08,
-            duration: 0.8,
-            ease: "power3.out",
-          }),
+        onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, stagger: 0.08, duration: 0.8, ease: "power3.out" }),
         once: true,
         start: "top 86%",
       });
+
+      gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
     },
     { scope: page },
   );
@@ -177,15 +168,15 @@ export default function LandingPage() {
             className="parallax-img absolute inset-0 bg-cover bg-center scale-110"
             style={{
               backgroundImage:
-                "url('https://picsum.photos/seed/corn-harvest/1200/900')",
+                "url('/BONNIE-PLANTS_corn-iStock-857670630-2400px_1ce4b5df-20b7-433c-acde-8703235c66be.webp')",
               filter: "contrast(1.08) brightness(0.85) saturate(0.9)",
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-bg-base via-bg-base/75 to-bg-base/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-base/90 via-bg-base/60 to-bg-base/5" />
         </div>
 
         {/* Text */}
-        <div className="relative z-10 max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16 w-full py-24 sm:py-32">
+        <div className="relative z-20 max-w-[1920px] mx-auto px-6 sm:px-12 lg:px-16 w-full py-24 sm:py-32">
           <div className="max-w-[800px]">
             <p className="hero-eyebrow label-caps text-[--text-muted] mb-8 tracking-[0.2em]">
               Agricultural IoT &ensp;&middot;&ensp; Sweet Corn Intelligence

@@ -17,7 +17,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const RANGE_DAYS: Record<PriceRange, number> = { "30D": 30, "60D": 60, "90D": 90 };
 
-function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
+function isoDate(d: Date) { return format(d, "yyyy-MM-dd"); }
 
 const GRADES = [
   { id: 182, label: "Large",  dot: "#1D4ED8" },
@@ -100,14 +100,19 @@ export default function MarketPage() {
   function handleRange(r: PriceRange) { setRange(r); setLoading(true); }
 
   useGSAP(() => {
+    gsap.set(".price-stat", { opacity: 0, y: 30 });
+    gsap.set(".animate-section", { opacity: 0, y: 40 });
+
     ScrollTrigger.batch(".price-stat", {
-      onEnter: els => gsap.from(els, { y: 30, opacity: 0, stagger: 0.1, duration: 0.6, ease: "power2.out" }),
+      onEnter: els => gsap.to(els, { opacity: 1, y: 0, stagger: 0.1, duration: 0.6, ease: "power2.out" }),
       once: true, start: "top 90%",
     });
     ScrollTrigger.batch(".animate-section", {
-      onEnter: els => gsap.from(els, { y: 40, opacity: 0, duration: 0.7, ease: "power2.out" }),
+      onEnter: els => gsap.to(els, { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }),
       once: true, start: "top 88%",
     });
+
+    gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
   }, { scope: page });
 
   const stats     = buildStats(prices);

@@ -2,6 +2,12 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+export interface Farm {
+  id: string;
+  lat: number | null;
+  lon: number | null;
+}
+
 export interface SensorReading {
   id: number;
   farm_id: string;
@@ -19,11 +25,36 @@ export interface SensorReading {
 export interface GrowthLog {
   id: number;
   farm_id: string;
-  growth_progress_in_gdd: string;
+  growth_progress_in_gdd: number;
   height: number | null;
   n_ears: number | null;
   notes: string | null;
   created_at: string;
+}
+
+export interface GddSummary {
+  farm_id: string;
+  cumulative_gdd: number;
+  planting_date: string | null;
+  current_stage_id: string | null;
+  current_stage_label: string;
+  days_since_planting: number | null;
+  projected_r3_date: string | null;
+  projected_r6_date: string | null;
+  r3_gdd: number;
+  r6_gdd: number;
+}
+
+export interface RainDay {
+  date: string;
+  total_mm: number;
+}
+
+export interface RainAccumulation {
+  week_start: string;
+  week_end: string;
+  total_mm: number;
+  days: RainDay[];
 }
 
 export interface WeatherDaily {
@@ -54,7 +85,7 @@ export interface MarketPrice {
 
 export interface GrowthLogCreate {
   farm_id: string;
-  growth_progress_in_gdd: string;
+  growth_progress_in_gdd: number;
   height?: number;
   n_ears?: number;
   notes?: string;
@@ -80,9 +111,9 @@ function qs(params: Record<string, string | undefined>): string {
 
 // ── Endpoints ────────────────────────────────────────────────────────────────
 
-/** Returns distinct farm_ids from the sensors table. */
-export function fetchFarms(): Promise<string[]> {
-  return get<string[]>("/api/farms");
+/** Returns farms with id and last-known GPS coordinates. */
+export function fetchFarms(): Promise<Farm[]> {
+  return get<Farm[]>("/api/farms");
 }
 
 /**
@@ -114,6 +145,16 @@ export function fetchGrowthLogs(
   endDate?: string,
 ): Promise<GrowthLog[]> {
   return get<GrowthLog[]>(`/api/growth${qs({ farm_id: farmId, start_date: startDate, end_date: endDate })}`);
+}
+
+/** Modified GDD accumulation summary computed by the backend. */
+export function fetchGdd(farmId: string): Promise<GddSummary> {
+  return get<GddSummary>(`/api/gdd/${encodeURIComponent(farmId)}`);
+}
+
+/** Weekly rain forecast accumulation from the current ISO week. */
+export function fetchRainAccumulation(): Promise<RainAccumulation> {
+  return get<RainAccumulation>("/api/weather/rain-accumulation");
 }
 
 export function fetchWeatherDaily(startDate: string, endDate: string): Promise<WeatherDaily[]> {

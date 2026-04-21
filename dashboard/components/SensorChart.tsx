@@ -46,7 +46,7 @@ function downsample(readings: SensorReading[]) {
   for (const r of readings) {
     const d = parseISO(r.created_at);
     d.setMinutes(0, 0, 0);
-    const key = d.toISOString();
+    const key = format(d, "yyyy-MM-dd'T'HH:00:00");
     if (!map.has(key))
       map.set(key, { temps: [], i2c: [], hums: [], moist: [], lights: [] });
     const b = map.get(key)!;
@@ -199,18 +199,26 @@ export default function SensorChart({
               />
               <Tooltip
                 labelFormatter={labelFmt}
-                formatter={(v, n) => [
-                  <span key={n} className="flex items-center gap-1">
-                    <Thermometer
-                      size={12}
-                      className={
-                        n === "temp" ? "text-red-500" : "text-orange-400"
-                      }
-                    />
-                    {v}°C
-                  </span>,
-                  n === "temp" ? "DHT" : "I2C",
-                ]}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload;
+                  return (
+                    <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                      <p className="text-[--text-muted] text-[10px] pb-2 mb-2 border-b border-white/10">
+                        {d?.time ? tickFmt(d.time) : label}
+                      </p>
+                      {payload.map((p) => (
+                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                            <span className="text-white/80">{p.name}</span>
+                          </div>
+                          <span className="font-semibold text-white">{p.value}°C</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
               />
               <Legend
                 wrapperStyle={AXIS_STYLE}
@@ -279,13 +287,26 @@ export default function SensorChart({
               <YAxis tick={AXIS_STYLE} unit="%" width={38} domain={[0, 100]} />
               <Tooltip
                 labelFormatter={labelFmt}
-                formatter={(v) => [
-                  <span key="hum" className="flex items-center gap-1">
-                    <Droplets size={12} className="text-blue-500" />
-                    {v}%
-                  </span>,
-                  "Humidity",
-                ]}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload;
+                  return (
+                    <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                      <p className="text-[--text-muted] text-[10px] pb-2 mb-2 border-b border-white/10">
+                        {d?.time ? tickFmt(d.time) : label}
+                      </p>
+                      {payload.map((p) => (
+                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                          <div className="flex items-center gap-2">
+                            <Droplets size={12} className="text-blue-500" />
+                            <span className="text-white/80">{p.name}</span>
+                          </div>
+                          <span className="font-semibold text-white">{p.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
               />
               <Legend
                 wrapperStyle={AXIS_STYLE}
@@ -341,13 +362,26 @@ export default function SensorChart({
               <YAxis tick={AXIS_STYLE} unit="%" width={38} domain={[0, 100]} />
               <Tooltip
                 labelFormatter={labelFmt}
-                formatter={(v) => [
-                  <span key="moist" className="flex items-center gap-1">
-                    <Sprout size={12} className="text-emerald-500" />
-                    {v}%
-                  </span>,
-                  "Soil Moisture"
-                ]}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload;
+                  return (
+                    <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                      <p className="text-[--text-muted] text-[10px] pb-2 mb-2 border-b border-white/10">
+                        {d?.time ? tickFmt(d.time) : label}
+                      </p>
+                      {payload.map((p) => (
+                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                          <div className="flex items-center gap-2">
+                            <Sprout size={12} className="text-emerald-500" />
+                            <span className="text-white/80">{p.name}</span>
+                          </div>
+                          <span className="font-semibold text-white">{p.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
               />
               <Legend
                 wrapperStyle={AXIS_STYLE}
@@ -408,13 +442,26 @@ export default function SensorChart({
               />
               <Tooltip
                 labelFormatter={labelFmt}
-                formatter={(v) => [
-                  <span key="light" className="flex items-center gap-1">
-                    <Sun size={12} className="text-amber-500" />
-                    {v} lux
-                  </span>,
-                  "Light"
-                ]}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0]?.payload;
+                  return (
+                    <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
+                      <p className="text-[--text-muted] text-[10px] pb-2 mb-2 border-b border-white/10">
+                        {d?.time ? tickFmt(d.time) : label}
+                      </p>
+                      {payload.map((p) => (
+                        <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
+                          <div className="flex items-center gap-2">
+                            <Sun size={12} className="text-amber-500" />
+                            <span className="text-white/80">{p.name}</span>
+                          </div>
+                          <span className="font-semibold text-white">{p.value} lux</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
               />
               <Legend
                 wrapperStyle={AXIS_STYLE}
