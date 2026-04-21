@@ -224,19 +224,19 @@ export default function SensorChart({
                 wrapperStyle={AXIS_STYLE}
                 formatter={(value) => {
                   const icons: Record<string, React.ReactNode> = {
-                    "DHT Temp": (
+                    "Temperature": (
                       <>
                         <Thermometer size={12} className="inline mr-1" />
-                        DHT Temp
+                        Temperature
                       </>
                     ),
-                    "I2C Temp": (
+                    "Temperature (I2C)": (
                       <>
                         <Thermometer
                           size={12}
                           className="inline mr-1 opacity-70"
                         />
-                        I2C Temp
+                        Temperature (I2C)
                       </>
                     ),
                   };
@@ -246,7 +246,7 @@ export default function SensorChart({
               <Line
                 type="monotone"
                 dataKey="temp"
-                name="DHT Temp"
+                name="Temperature"
                 stroke="#E05252"
                 strokeWidth={2}
                 dot={false}
@@ -255,7 +255,7 @@ export default function SensorChart({
               <Line
                 type="monotone"
                 dataKey="temp_i2c"
-                name="I2C Temp"
+                name="Temperature (I2C)"
                 stroke="#F0964A"
                 strokeWidth={1.5}
                 dot={false}
@@ -299,7 +299,7 @@ export default function SensorChart({
                         <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
                           <div className="flex items-center gap-2">
                             <Droplets size={12} className="text-blue-500" />
-                            <span className="text-white/80">{p.name}</span>
+                            <span className="text-white/80">{p.name === "Humidity" ? "Air Humidity" : p.name}</span>
                           </div>
                           <span className="font-semibold text-white">{p.value}%</span>
                         </div>
@@ -374,7 +374,7 @@ export default function SensorChart({
                         <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
                           <div className="flex items-center gap-2">
                             <Sprout size={12} className="text-emerald-500" />
-                            <span className="text-white/80">{p.name}</span>
+                            <span className="text-white/80">{p.name === "Soil Moisture" ? "Soil Moisture" : p.name}</span>
                           </div>
                           <span className="font-semibold text-white">{p.value}%</span>
                         </div>
@@ -454,7 +454,7 @@ export default function SensorChart({
                         <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
                           <div className="flex items-center gap-2">
                             <Sun size={12} className="text-amber-500" />
-                            <span className="text-white/80">{p.name}</span>
+                            <span className="text-white/80">{p.name === "Light" ? "Light Intensity" : p.name}</span>
                           </div>
                           <span className="font-semibold text-white">{p.value} lux</span>
                         </div>

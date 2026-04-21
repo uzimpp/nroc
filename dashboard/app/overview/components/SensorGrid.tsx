@@ -118,11 +118,11 @@ function MetricCard({
             />
             <Tooltip
               labelFormatter={labelFmt}
-              content={({ active, payload, label }) => {
+              content={({ active, payload, label: xLabel }) => {
                 if (!active || !payload?.length) return null;
                 return (
                   <div className="bg-black border border-white/10 rounded-[--radius-md] px-4 py-3 shadow-[--shadow-lg] text-xs min-w-[160px]">
-                    <p className="text-white/50 text-[10px] pb-2 mb-2 border-b border-white/10">{label}</p>
+                    <p className="text-white/50 text-[10px] pb-2 mb-2 border-b border-white/10">{labelFmt(xLabel)}</p>
                     {payload.map((p) => (
                       <div key={p.name} className="flex items-center justify-between gap-6 mb-1 last:mb-0">
                         <div className="flex items-center gap-2">
