@@ -60,16 +60,23 @@ const [loading, setLoading]       = useState(true);
     const start  = subDays(now, RANGE_DAYS[r]);
     const future = addDays(now, 7);
     try {
-      const results = await Promise.allSettled([
-        fetchSensors(localIso(start), localIso(addDays(now, 1))),
-        fetchWeatherDaily(isoDate(now), isoDate(future)),
-        fetchRainAccumulation(),
-      ]);
+      // Sequentially fetch data to prevent concurrent backend queries 
+      // from colliding on the un-pooled database connection.
+      try {
+        const sensResult = await fetchSensors(localIso(start), localIso(addDays(now, 1)));
+        setReadings(sensResult);
+      } catch (e) { console.error("Sensors error:", e); }
 
-      const [sensResult, wxResult, rainResult] = results;
-      if (sensResult.status === "fulfilled") setReadings(sensResult.value);
-      if (wxResult.status === "fulfilled") setWeather(wxResult.value);
-      if (rainResult.status === "fulfilled") setRain(rainResult.value);
+      try {
+        const wxResult = await fetchWeatherDaily(isoDate(now), isoDate(future));
+        setWeather(wxResult);
+      } catch (e) { console.error("Weather error:", e); }
+
+      try {
+        const rainResult = await fetchRainAccumulation();
+        setRain(rainResult);
+      } catch (e) { console.error("Rain error:", e); }
+
       setLastUpdate(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data.");

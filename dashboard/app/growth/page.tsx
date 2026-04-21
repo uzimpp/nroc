@@ -30,14 +30,18 @@ export default function GrowthPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const results = await Promise.allSettled([
-        fetchGrowthLogs(),
-        fetchFarms(),
-      ]);
-      const [logsResult, farmsResult] = results;
-      if (logsResult.status === "fulfilled") setLogs(logsResult.value);
-      if (farmsResult.status === "fulfilled" && farmsResult.value.length > 0)
-        setFarmId(farmsResult.value[0].id);
+      // Fetch sequentially to prevent concurrent db connection overload
+      let fetchedLogs: GrowthLog[] = [];
+      try {
+        fetchedLogs = await fetchGrowthLogs();
+        setLogs(fetchedLogs);
+      } catch (e) { console.error("Logs error:", e); }
+
+      try {
+        const farms = await fetchFarms();
+        if (farms.length > 0) setFarmId(farms[0].id);
+      } catch (e) { console.error("Farms error:", e); }
+
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load growth data.");
     } finally {

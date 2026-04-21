@@ -130,7 +130,7 @@ export default function GrowthLogForm({ farmId, onSuccess, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-[--radius-xl] overflow-hidden shadow-[--shadow-lg] max-h-[95svh] flex flex-col">
+      <div className="w-full max-w-lg rounded-[--radius-xl] overflow-hidden shadow-[--shadow-lg] bg-white max-h-[95svh] flex flex-col">
 
         {/* Header */}
         <div className="bg-[--brand] px-6 py-5 shrink-0">
