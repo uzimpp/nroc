@@ -145,9 +145,12 @@ export default function OverviewPage() {
     gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
   }, { scope: page });
 
-  // Animate .stat-card only after data has loaded (elements are in DOM)
+  // Animate .hero-strip and .stat-card only after data has loaded (elements are in DOM)
   useEffect(() => {
     if (loading) return;
+    gsap.from(".hero-strip", {
+      y: 40, opacity: 0, duration: 1.0, ease: "power3.out",
+    });
     gsap.from(".stat-card", {
       y: 28, opacity: 0, stagger: 0.07, duration: 0.65, ease: "power2.out", delay: 0.1,
     });
